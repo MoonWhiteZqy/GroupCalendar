@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="zh-cn">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Vue -->
+    {% comment %} <script src = 'vue.js'></script> {% endcomment %}
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script>
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/css/bootstrap.min.css" 
+    integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+
+    <title>日程表</title>
+    <style>
+        /* 固定表格宽度 */
+        table{
+            table-layout: fixed;
+            word-break: break-all;
+        };
+
+        /* 鼠标滑过变色 */
+        td{
+            background-color: aliceblue;
+        }
+        td:hover{
+            background-color:aqua;
+        }
+    </style>
+  </head>
+  <body>
+
+    <!-- 导航条 -->
+    <nav class="navbar navbar-expand-lg navbar-light" style="background-color: #e3f2fd;">
+        <a class="navbar-brand" href="#">课程表</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" 
+        aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+      
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+          <ul class="navbar-nav mr-auto">
+            <li class="nav-item active">
+              <a class="nav-link" href="#">我的安排 <span class="sr-only">(current)</span></a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#">团队安排</a>
+            </li>
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                切换模式
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                <a class="dropdown-item" href="#">课程安排</a>
+                <a class="dropdown-item" href="#">事务安排</a>
+                <div class="dropdown-divider"></div>
+                <a class="dropdown-item" href="#">Something else here</a>
+              </div>
+            </li>
+          </ul>
+          <!-- <li>123</li> -->
+          <form class="form-inline my-2 my-lg-0">
+            <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search">
+            <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
+          </form>
+        </div>
+      </nav>
+
+
+
+    <!-- 表格内容 -->
+    <div id = "app">    
+    <table class="table table-bordered">
+        <thead class="thead-dark">
+            <!-- 显示时间的表格 -->
+            <tr>
+                <th>#</th>
+                <th v-for="week in weekdays">{{week.name}}{% verbatim myblock %}{% endverbatim myblock %}</th>
+            </tr>
+
+        </thead>
+        <!-- 记录课程的表格 -->
+        <tr v-for="(content, index) in contents">
+            <td>{% verbatim myblock %}{{classes[index].name}} {{classes[index].time}}{% endverbatim myblock %}</td>
+            
+            <!-- 七天的课程 -->
+            <td v-for="jdex in myindex" v-on:click="changeText($event, index, jdex.id)"
+            data-toggle="modal" data-target="#myModal">{% verbatim myblock %}{{content[jdex.id]}}{% endverbatim myblock %}</td>
+            
+        </tr>
+
+    </table>
+
+    <!-- 切换当前所处星期的导航条 -->
+    <nav aria-label="Page navigation example">
+        <ul class="pagination justify-content-end">
+          <li class="page-item" id="prevli">
+            <a class="page-link" href="#" id="preva" onclick="changeweek(-1)">上一周</a>
+          </li>
+          <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">第{% verbatim myblock %}{{weekcount}}{% endverbatim myblock %}周</a></li>
+          <li class="page-item" id="nextli">
+            <a class="page-link" href="#" id="nexta" onclick="changeweek(1)">下一周</a>
+          </li>
+        </ul>
+    </nav>
+
+    </div>
+
+    <!-- 弹出框体 -->
+    <!-- Modal -->
+    <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+            <h5 class="modal-title" id="ModalLabel">输入接下来的安排</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            </div>
+            <div class="modal-body">
+            <!-- <form> -->
+                <label>有什么安排</label>
+                <input class="form-control" id="nextplan" onkeypress="return onKey(event)">
+            <!-- </form> -->
+            </div>
+            <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">关闭</button>
+            <button type="button" class="btn btn-primary" onclick="clearText()" data-dismiss="modal" id="dismiss">确认</button>
+            </div>
+        </div>
+        </div>
+    </div>
+
+    <script>
+        var writing_affair = false;
+        var changing_td;
+        var changing_i, changing_j; //用于读取更改安排的格子坐标
+        var app = new Vue({
+            el:"#app",
+            data:{
+                // 课程名字
+                courses:[],
+                // 事物名字
+                affairs:[],
+                // 实际显示内容：课程+事物
+                contents:[],
+                // 上课时间
+                classes:[
+                    {name:"第一节课",time:"08:00-08:45"},
+                    {name:"第二节课",time:"08:55-09:40"},
+                    {name:"第三节课",time:"09:55-10:40"},
+                    {name:"第四节课",time:"10:50-11:35"},
+                    {name:"第五节课",time:"11:45-12:30"},
+                    {name:"第六节课",time:"13:30-14:15"},
+                    {name:"第七节课",time:"14:25-15:10"},
+                    {name:"第八节课",time:"15:25-16:10"},
+                    {name:"第九节课",time:"16:20-17:05"},
+                    {name:"第十节课",time:"17:15-18:00"},
+                    {name:'第十一节',time:"18:30-19:15"},
+                    {name:"第十二节",time:"19:25-20:10"},
+                    {name:"第十三节",time:"20:20-21:05"},
+                    {name:"第十四节",time:"21:10-24:00"},
+                ],
+                weekdays:[
+                    {name:"周一"},
+                    {name:"周二"},
+                    {name:"周三"},
+                    {name:"周四"},
+                    {name:"周五"},
+                    {name:"周六"},
+                    {name:"周日"},
+                ],
+                weekcount:0,
+                myindex:[
+                    {id:0},
+                    {id:1},
+                    {id:2},
+                    {id:3},
+                    {id:4},
+                    {id:5},
+                    {id:6}
+                ]
+            },
+            methods:{
+                changeText:function(event, i, j){
+                    changing_td = event.currentTarget;
+                    var mymodaltitle = document.getElementById("ModalLabel");
+                    var nextp = document.getElementById("nextplan");
+                    nextp.value = changing_td.innerHTML;
+                    changing_i = i;
+                    changing_j = j;
+                    mymodaltitle.innerHTML = "周" + (j + 1).toString() + ",第" + (i + 1).toString() + "节课";
+                }
+            }
+        })
+
+        // 为数据补全存储的索引
+        var setStorInd = function(affair){
+            var res = "";
+            if(affair.week < 10){
+                res += "0";
+            }
+            res += affair.week.toString();
+            if(affair.class < 10){
+                res += "0";
+            }
+            res += affair.class.toString();
+            res += affair.day.toString();
+            return res;
+        }
+
+
+        //用于真正修改表格内容，并且把修改后内容保存到本地存储
+        clearText = function(){
+            var nextp = document.getElementById("nextplan");
+            changing_td.innerHTML = nextp.value;
+            app.$set(app.$data.contents[changing_i], changing_j, nextp.value);
+            if(!window.localStorage){
+                console.log("无法更改");
+            }
+            else{
+                storage = window.localStorage;
+                writing_affair = true;
+                if(!writing_affair){ //写课程信息
+                    storage[changing_i * 14 + changing_j] = nextp.value;
+                    app.$set(app.$data.courses[changing_i], changing_j, nextp.value);
+                    if(nextp.value == ""){ //当删除安排时，清除本地存储，避免占据空间
+                        localStorage.removeItem(changing_i * 14 + changing_j);
+                    }
+                }
+                else{ //写事情安排
+                    var affair = {
+                        week:app.$data.weekcount,
+                        class:changing_i,
+                        day:changing_j,
+                        thing:nextp.value
+                    };
+                    affstr = setStorInd(affair);//存储的索引id
+                    storage[affstr] = JSON.stringify(affair);
+                    app.$set(app.$data.affairs[changing_i], changing_j, nextp.value);
+                    if(nextp.value == ""){
+                        localStorage.removeItem(affstr);
+                    }
+                }
+                location.reload(); //刷新页面，防止不更新
+            }
+        }
+
+        // 按下回车后保存修改信息
+        function onKey(event){
+            if(event.keyCode == "13"){
+                document.getElementById("dismiss").click();
+            }
+        }
+
+        // 读取本地存储数据
+        readst = function(){
+            if(!window.localStorage){
+                console.log("无法读取");
+            }
+            else{
+                affairs = new Array();
+                var week = app.$data.weekcount;
+                for(var i = 0; i < localStorage.length; i++){
+                    var numindex = localStorage.key(i);
+                    if(numindex.length == 5){
+                        affairs.push(numindex);
+                        continue;
+                    }
+                    var x = Math.floor(numindex / 14); //找到数据存储的行数
+                    var y = numindex % 14;  //找到数据存储的列
+                    app.$set(app.$data.courses[x], y, localStorage[numindex]); //写入数据并更新页面
+                }
+                //先对事务进行清空，然后再寻找
+                for(var i = 0; i < 14; i++){
+                    for(var j = 0; j < 7; j++){
+                        app.$set(app.$data.affairs[i], j, "");
+                    }
+                }
+                for(var i = 0; i < affairs.length; i++){
+                    var affair = JSON.parse(localStorage[affairs[i]]);
+                    var x = affair.class;
+                    var y = affair.day;
+                    var thing = affair.thing;
+                    if(affair.week == week){ //判断时间是否在这周
+                        app.$set(app.$data.affairs[x], y, thing);
+                    }
+                }
+                for(var i = 0; i < 14; i++){
+                    for(var j = 0; j < 7; j++){
+                        app.$set(app.$data.contents[i], j, app.$data.courses[i][j] + app.$data.affairs[i][j]);
+                    }
+                }
+            }
+        }
+        
+        
+
+        // 清除本地存储数据
+        cleast = function(){
+            if(!window.localStorage){
+                console.log("无法清除");
+            }
+            else{
+                storage = window.localStorage;
+                storage.clear();
+            }
+        }
+    </script>
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js" 
+    integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" 
+    integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/js/bootstrap.min.js" 
+    integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI" crossorigin="anonymous"></script>
+
+    <script>
+        var weekname = ["周一","周二","周三","周四","周五","周六","周日"];
+        for(var i = 0; i < 14; i++){
+            course = new Array(7);
+            affair = new Array(7);
+            content = new Array(7);
+            for(var j = 0; j < 7; j++){
+                course[j] = "";
+                affair[j] = "";
+                content[j] = "";
+            }
+            app.$data.courses.push(course);
+            app.$data.affairs.push(affair);
+            app.$data.contents.push(content);
+        }
+
+        Date.prototype.toDayString = function(){
+            return this.getFullYear() + '年' + (this.getMonth() + 1).toString() + '月' + this.getDate() + '日';
+        }
+
+        var date = new Date();
+        var beginday = new Date(1599408000000); //学期的开始，9月7日0时（第0周）
+
+
+        // 设定当前所处时间
+        var setday = function(indexdate){
+            var dayx = (indexdate.getDay() + 6) % 7; //重新定位，新的一周从周一开始
+            var monday = new Date(indexdate.getTime() - 86400000 * dayx);
+            for(var i = 0; i < 7; i++){ //为每一天加上日期
+                var today = new Date(monday.getTime() + 86400000 * i);
+                today = today.toDayString() + ' ' + weekname[i];
+                app.$set(app.$data.weekdays[i], 'name', today);
+            }
+            var weekc = Math.floor((date - beginday) / (7 * 24 * 3600000)); //定义当前所处的星期
+            app.$set(app.$data, 'weekcount', weekc);
+        }
+        setday(date);
+
+        //切换当前所处的星期计数
+        var changeweek = function(weekindex){
+            var nextday = new Date(date.getTime() + 86400000 * 7 * weekindex);
+            date = nextday;
+            setday(date);
+            var currweek = app.$data.weekcount;
+            weeklocal = currweek;
+            if(currweek == 1){ //禁用上一周
+                document.getElementById("preva").setAttribute("aria:disabled", true);
+                document.getElementById("prevli").setAttribute("class", "page-item disabled");
+                document.getElementById("preva").setAttribute("tabindex", -1);
+                document.getElementById("preva").blur();
+            }
+            else if(currweek == 16){ //禁用下一周
+                document.getElementById("nexta").setAttribute("aria:disabled", true);
+                document.getElementById("nextli").setAttribute("class", "page-item disabled");
+                document.getElementById("nexta").setAttribute("tabindex", -1);
+                document.getElementById("nexta").blur();
+            }
+            else{ //解禁切换按钮
+                document.getElementById("preva").setAttribute("aria:disabled", false);
+                document.getElementById("prevli").setAttribute("class", "page-item");
+                document.getElementById("preva").setAttribute("tabindex", 0);
+                document.getElementById("nexta").setAttribute("aria:disabled", false);
+                document.getElementById("nextli").setAttribute("class", "page-item");
+                document.getElementById("nexta").setAttribute("tabindex", 0);
+            }
+            readst();
+        }
+        
+        readst();
+
+
+        // 获取某节课的时间戳
+        // 格式为：第几周、第几天、第几节
+        // var getStamp = function()
+
+
+
+    </script>
+  </body>
+</html>
