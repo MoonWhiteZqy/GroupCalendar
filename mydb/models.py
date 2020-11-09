@@ -53,10 +53,10 @@ class StudentModel(mongoengine.Document):
     def login_confirm(id, password):
         stu = StudentModel.objects(stuid = id).first()
         if not stu:
-            return "id doesn't exist", False
+            return {"reason":"id doesn't exist"}, False
         if stu.secret != password:
-            return "password is wrong", False
-        return "login confirmed", True
+            return {"reason":"password is wrong"}, False
+        return {"name":stu.name, "id":id}, True
 
 class AffairModel(mongoengine.Document):
     stuid = mongoengine.StringField(max_length=12, required=True) #学生学号

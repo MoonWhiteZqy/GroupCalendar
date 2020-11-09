@@ -5,7 +5,6 @@ from .models import CourseModel, StudentModel, AffairModel
 from django.views.generic import View
 import json
 
-
 def success(kwargs):
     res = {'status':'success'}
     if kwargs:
@@ -22,6 +21,17 @@ def fail(kwargs):
 
 def jsonify(request):
     return json.loads(request.body)
+
+# 构建一个表格，用于存放数据
+def table_construct(x, y):
+    tables = []
+    for i in range(x):
+        table = []
+        for j in range(y):
+            table.append("")
+        tables.append(table)
+    return tables
+
 
 class Course(View):
     def get_course(request):
@@ -41,6 +51,14 @@ class Course(View):
             return HttpResponse(success(infos))
         return HttpResponse(fail())
 
+    def table_get_course(id):
+        courses = CourseModel.objects(stuid = id)
+        data = table_construct(14, 7)
+        for course in courses:
+            data[course.daytime][course.weekday] = course.coursename
+        return data
+
+
     def propost(request):
         data = request.body
         jdata = json.loads(data) #把post信息转化为json格式
@@ -52,6 +70,7 @@ class Course(View):
 
 class Student(View):
     def add(request):
+        # data = request.body.decode('utf-8')
         data = request.body
         jdata = json.loads(data)
 
@@ -65,8 +84,8 @@ class Student(View):
 
         reason, status = StudentModel.login_confirm(jdata['stuid'], jdata['secret'])
         if status:
-            return HttpResponse(success({"reason":reason}))
-        return HttpResponse(fail({"reason":reason}))
+            return HttpResponse(success(reason))
+        return HttpResponse(fail(reason))
 
 class Affair(View):
     def set_affair(request):

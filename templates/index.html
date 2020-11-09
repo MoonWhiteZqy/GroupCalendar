@@ -5,15 +5,25 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
+
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.5.1.js" integrity="sha256-QWo7LDvxbWT2tbbQ97B53yJnYU3WhH/C8ycbRAkjPDc=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" 
+    integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/js/bootstrap.min.js" 
+    integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI" crossorigin="anonymous"></script>
+    
+
     <!-- Vue -->
-    {% comment %} <script src = 'vue.js'></script> {% endcomment %}
     <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script>
 
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/css/bootstrap.min.css" 
     integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
 
-    <title>日程表</title>
+    <title id="usertitle">日程表</title>
     <style>
         /* 固定表格宽度 */
         table{
@@ -77,19 +87,42 @@
             <!-- 显示时间的表格 -->
             <tr>
                 <th>#</th>
-                <th v-for="week in weekdays">{{week.name}}{% verbatim myblock %}{% endverbatim myblock %}</th>
+                {% for dayname in weekdaynames %}
+                    <th>{{dayname}}</th>
+                {% endfor %}
             </tr>
 
         </thead>
-        <!-- 记录课程的表格 -->
+
+        
+        {% comment %} <!-- 记录课程的表格 -->
         <tr v-for="(content, index) in contents">
             <td>{% verbatim myblock %}{{classes[index].name}} {{classes[index].time}}{% endverbatim myblock %}</td>
             
             <!-- 七天的课程 -->
             <td v-for="jdex in myindex" v-on:click="changeText($event, index, jdex.id)"
             data-toggle="modal" data-target="#myModal">{% verbatim myblock %}{{content[jdex.id]}}{% endverbatim myblock %}</td>
+
+            {% for dt in dtindex %}
+                {% for wd in wdindex %}
+                <td>
+                    {{courses.2.wd}}
+                </td>
+                {% endfor %}
+            {% endfor %}
             
-        </tr>
+        </tr> {% endcomment %}
+        {%for classes, course in courses.items%}
+            <tr>
+            <td>{{classes}}</td>
+            {% for coursename in course %}
+                <td data-toggle="modal" data-target="#myModal" class="content">
+                    {{coursename}}
+                </td>
+            {% endfor %}
+            </tr>
+        {% endfor %}
+        
 
     </table>
 
@@ -133,10 +166,52 @@
         </div>
     </div>
 
+    <!-- 登录框体 -->
+    <!-- Modal -->
+    <div class="modal fade" id="loginModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true" data-backdrop="static">
+        <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+            <h5 class="modal-title" id="LoginTitle">登录</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            </div>
+            <div class="modal-body">
+            <!-- <form> -->
+                <label>学号:</label>
+                <input class="form-control" id="stuid">
+                <label>密码:</label>
+                <input class="form-control" id="password" onkeypress="return onLoginKey(event)">
+            <!-- </form> -->
+            </div>
+            <div class="modal-footer">
+            {% comment %} <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button> {% endcomment %}
+            <button type="button" class="btn btn-primary" onclick="login()" id="logindismiss">登录</button>
+            </div>
+        </div>
+        </div>
+    </div>
+
     <script>
         var writing_affair = false;
         var changing_td;
         var changing_i, changing_j; //用于读取更改安排的格子坐标
+        var user = "";
+        var userid = "";
+        // 初始化用户
+        if(localStorage["user"]){
+            user = localStorage["user"];
+        }
+        if(localStorage["userid"]){
+            userid = localStorage["userid"];
+        }
+        else{
+            $('#loginModal').modal('show');
+        }
+        if(user.length > 0){
+            document.getElementById("usertitle").innerHTML="你好," + user;
+        }
         var app = new Vue({
             el:"#app",
             data:{
@@ -214,7 +289,7 @@
 
         //用于真正修改表格内容，并且把修改后内容保存到本地存储
         clearText = function(){
-            var nextp = document.getElementById("nextplan");
+            {% comment %} var nextp = document.getElementById("nextplan");
             changing_td.innerHTML = nextp.value;
             app.$set(app.$data.contents[changing_i], changing_j, nextp.value);
             if(!window.localStorage){
@@ -245,7 +320,49 @@
                     }
                 }
                 location.reload(); //刷新页面，防止不更新
+            } {% endcomment %}
+
+            var mydata = {
+                "stuid":"17307130000",
+                "name":"李总",
+                "secret":"123456",
+                "gender":"难"
             }
+            $.ajax({
+                type:"POST",
+                dataType:"json",
+                url:"/add/student/",
+                contentType:"application/json",
+                data:JSON.stringify(mydata),
+                success:function(result){
+                    console.log("result = ", result);
+
+                }
+            });
+        }
+
+        login = function(){
+            var logindata = {
+                "stuid":document.getElementById("stuid").value,
+                "secret":document.getElementById("password").value
+            }
+            $.ajax({
+                type:"POST",
+                dataType:"json",
+                url:"/login/",
+                contentType:"application/json",
+                data:JSON.stringify(logindata),
+                success:function(result){
+                    if(result["status"] == "success"){
+                        $('#loginModal').modal('hide');
+                        localStorage["user"] = result["name"];
+                        localStorage["userid"] = result["id"];
+                    }
+                    else{
+                        document.getElementById("LoginTitle").innerHTML = result["reason"];
+                    }
+                }
+            })
         }
 
         // 按下回车后保存修改信息
@@ -255,7 +372,13 @@
             }
         }
 
-        // 读取本地存储数据
+        function onLoginKey(event){
+            if(event.keyCode == "13"){
+                document.getElementById("logindismiss").click();
+            }
+        }
+
+        {% comment %} // 读取本地存储数据
         readst = function(){
             if(!window.localStorage){
                 console.log("无法读取");
@@ -295,7 +418,7 @@
                 }
             }
         }
-        
+         {% endcomment %}
         
 
         // 清除本地存储数据
@@ -308,16 +431,22 @@
                 storage.clear();
             }
         }
+
+        var cts = document.getElementsByClassName("content");
+        for(var i = 0; i < cts.length; i++){
+            cts[i].index = i;
+            cts[i].onclick = function(){
+                var rindex = this.index;
+                x = Math.floor(this.index / 7) + 1;
+                y = this.index % 7 + 1;
+                document.getElementById("ModalLabel").innerHTML = "星期" + y + "第" + x + "节课";
+                document.getElementById("nextplan").value = cts[rindex].innerHTML;
+            }
+        }
+
+        
     </script>
 
-    <!-- Optional JavaScript -->
-    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js" 
-    integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" 
-    integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/js/bootstrap.min.js" 
-    integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI" crossorigin="anonymous"></script>
 
     <script>
         var weekname = ["周一","周二","周三","周四","周五","周六","周日"];
@@ -384,10 +513,10 @@
                 document.getElementById("nextli").setAttribute("class", "page-item");
                 document.getElementById("nexta").setAttribute("tabindex", 0);
             }
-            readst();
+            {% comment %} readst(); {% endcomment %}
         }
         
-        readst();
+        {% comment %} readst(); {% endcomment %}
 
 
         // 获取某节课的时间戳
