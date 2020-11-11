@@ -30,9 +30,12 @@ def index(request):
         "第十四节 21:10-24:00"
     ]
     context['courses'] = {}
-    # courses = Course.table_get_course('17307130109')
-    courses = Course.table_get_course('')
+    courses = Course.table_get_course('17307130109')
+    # courses = Course.table_get_course('')
     for i in range(14):
         context['courses'][classes[i]] = courses[i]
     
     return render(request, 'index.html', context)
+
+def login(request):
+    return render(request, 'login.html')    

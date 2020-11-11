@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="zh-cn">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.5.1.js" integrity="sha256-QWo7LDvxbWT2tbbQ97B53yJnYU3WhH/C8ycbRAkjPDc=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" 
+    integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/js/bootstrap.min.js" 
+    integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI" crossorigin="anonymous"></script>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/css/bootstrap.min.css" 
+        integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+    <style>
+        html,
+        body {
+        height: 100%;
+        }
+
+        body {
+        display: -ms-flexbox;
+        display: flex;
+        -ms-flex-align: center;
+        align-items: center;
+        padding-top: 40px;
+        padding-bottom: 40px;
+        background-color: #f5f5f5;
+        }
+
+        .form-signin {
+        width: 100%;
+        max-width: 330px;
+        padding: 15px;
+        margin: auto;
+        }
+        .form-signin .checkbox {
+        font-weight: 400;
+        }
+        .form-signin .form-control {
+        position: relative;
+        box-sizing: border-box;
+        height: auto;
+        padding: 10px;
+        font-size: 16px;
+        }
+        .form-signin .form-control:focus {
+        z-index: 2;
+        }
+        .form-signin input[type="email"] {
+        margin-bottom: -1px;
+        border-bottom-right-radius: 0;
+        border-bottom-left-radius: 0;
+        }
+        .form-signin input[type="password"] {
+        margin-bottom: 10px;
+        border-top-left-radius: 0;
+        border-top-right-radius: 0;
+        }
+    </style>
+    <title>Hello, world!</title>
+  </head>
+  <body class="text-center">
+    <div class="form-signin">
+        <h1 class="h3 mb-3 font-weight-normal" id="htitle">登录</h1>
+        <input type="text" id="inputStuid" class="form-control" placeholder="StudentId" required autofocus>
+
+        <input type="password" id="inputPassword" class="form-control" placeholder="Password" required>
+
+        <div class="checkbox mb-3">
+            <label>
+                <input type="checkbox" value="remember-me" id="chebox">
+                Remember me
+            </label>
+        </div>
+        <button class="btn btn-lg btn-primary btn-block" onclick="signin()">登录</button>
+        <p class="mt-5 mb-3 text-muted">Powered by Zqy</p>
+    </div>
+
+    
+  </body>
+  <script>
+    signin = function(){
+      var stuid = document.getElementById("inputStuid").value;
+      var secret = document.getElementById("inputPassword").value;
+      var data = {
+        "stuid":stuid,
+        "secret":secret
+      }
+      if(document.getElementById("chebox").checked){
+        localStorage["stuid"] = stuid;
+        localStorage["secret"] = secret;
+      }
+      var xhr = new XMLHttpRequest();
+      xhr.open("POST", "/login/", true);
+      xhr.setRequestHeader("Content-Type", "application/json");
+      xhr.onreadystatechange = function(){
+        var rescontent = xhr.responseText;
+        var mestitle = document.getElementById("htitle");
+        if(xhr.readyState == 4 && xhr.status == 200){
+          var message = JSON.parse(rescontent);
+          if(message["status"] == "fail"){
+            mestitle.innerHTML = message["reason"];
+          }
+          else{
+            mestitle.innerHTML = "成功，正在跳转";
+            window.location = "/index/";
+          }
+        }
+      }
+      xhr.send(JSON.stringify(data));
+    }
+
+  </script>
+</html>

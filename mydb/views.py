@@ -81,7 +81,6 @@ class Student(View):
     def login(request):
         data = request.body
         jdata = json.loads(data)
-
         reason, status = StudentModel.login_confirm(jdata['stuid'], jdata['secret'])
         if status:
             return HttpResponse(success(reason))
