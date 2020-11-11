@@ -1,11 +1,12 @@
-from django.shortcuts import render, HttpResponse
+from django.shortcuts import render, HttpResponse, HttpResponseRedirect, redirect, reverse
 
 # Create your views here.
 from .models import CourseModel, StudentModel, AffairModel
 from django.views.generic import View
+from GroupCalendar import views
 import json
 
-def success(kwargs):
+def success(**kwargs):
     res = {'status':'success'}
     if kwargs:
         for k, v in kwargs.items():
@@ -55,7 +56,7 @@ class Course(View):
         courses = CourseModel.objects(stuid = id)
         data = table_construct(14, 7)
         for course in courses:
-            data[course.daytime][course.weekday] = course.coursename
+            data[course.daytime - 1][course.weekday - 1] = course.coursename
         return data
 
 
@@ -75,13 +76,18 @@ class Student(View):
         jdata = json.loads(data)
 
         if StudentModel.add_student(jdata):
-            return HttpResponse(json.dumps(success({'student':jdata['name']})))
+            return HttpResponse(success())
         return HttpResponse(fail())
 
     def login(request):
-        data = request.body
-        jdata = json.loads(data)
-        reason, status = StudentModel.login_confirm(jdata['stuid'], jdata['secret'])
+        # data = request.body
+        # jdata = json.loads(data)
+        # stuid = request.GET.get("stuid")
+        # secret = request.GET.get("secret")
+        # reason, status = StudentModel.login_confirm(jdata['stuid'], jdata['secret'])
+        context = {}
+        return redirect("/index/")
+        # return HttpResponseRedirect("/index/", "hhh")
         if status:
             return HttpResponse(success(reason))
         return HttpResponse(fail(reason))

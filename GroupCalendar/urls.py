@@ -21,8 +21,8 @@ from mydb.views import Course, Student, Affair
 
 urlpatterns = [
     # path('admin/', admin.site.urls),
-    url(r'^$', views.login),
-    url(r'^index/$', views.index),
+    url(r'^$', views.index),
+    url(r'^index/$', views.index, name="nihao"),
     url(r'^add/$', Course.propost), #添加课程
     url(r'^get/$', Course.get_course), #获取课程
     url(r'^add/student/$', Student.add), #添加学生

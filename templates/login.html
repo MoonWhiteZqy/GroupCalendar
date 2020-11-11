@@ -82,6 +82,13 @@
     
   </body>
   <script>
+    if(localStorage["stuid"]){
+      $("#inputStuid").val(localStorage["stuid"]);
+    }
+    if(localStorage["secret"]){
+      $("#inputPassword").val(localStorage["secret"]);
+    }
+
     signin = function(){
       var stuid = document.getElementById("inputStuid").value;
       var secret = document.getElementById("inputPassword").value;
@@ -93,6 +100,7 @@
         localStorage["stuid"] = stuid;
         localStorage["secret"] = secret;
       }
+      postthing = function(){
       var xhr = new XMLHttpRequest();
       xhr.open("POST", "/login/", true);
       xhr.setRequestHeader("Content-Type", "application/json");
@@ -100,17 +108,35 @@
         var rescontent = xhr.responseText;
         var mestitle = document.getElementById("htitle");
         if(xhr.readyState == 4 && xhr.status == 200){
-          var message = JSON.parse(rescontent);
-          if(message["status"] == "fail"){
-            mestitle.innerHTML = message["reason"];
-          }
-          else{
-            mestitle.innerHTML = "成功，正在跳转";
-            window.location = "/index/";
-          }
+          // console.log(rescontent);
+          window.document.write(rescontent);
+          // var message = JSON.parse(rescontent);
+          // if(message["status"] == "fail"){
+          //   mestitle.innerHTML = message["reason"];
+          // }
+          // else{
+          //   mestitle.innerHTML = "成功，正在跳转";
+          //   window.location = "/index/";
+          // }
         }
       }
-      xhr.send(JSON.stringify(data));
+      xhr.send(JSON.stringify(data));}
+
+      var xhr = new XMLHttpRequest();
+      var myurl = "/login/?stuid=";
+      myurl += document.getElementById("inputStuid").value;
+      myurl += "&secret=";
+      myurl += document.getElementById("inputPassword").value;
+      console.log(myurl);
+      xhr.open("GET", "/login/", true);
+      xhr.send();
+      xhr.onreadystatechange = function(){
+        if(xhr.readyState == 4 && xhr.status == 200){
+          var res = xhr.responseText;
+          console.log(xhr);
+        }
+      }
+
     }
 
   </script>
