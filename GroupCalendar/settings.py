@@ -81,7 +81,7 @@ DATABASES = {
     }
 }
 from mongoengine import connect
-connect(db='courses', host="mongodb+srv://MoonWhite:mongo321@cluster0.lkazh.mongodb.net/content", connect=False)
+connect(db='courses', host="mongodb+srv://MoonWhite:mongo321@cluster0.lkazh.mongodb.net/content")
 
 
 # Password validation
