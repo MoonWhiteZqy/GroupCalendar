@@ -27,6 +27,6 @@ urlpatterns = [
     url(r'^get/$', Course.get_course), #获取课程
     url(r'^add/student/$', Student.add), #添加学生
     url(r'^login/$', Student.login), #用户登录
-    url(r'^affair/add/$', Affair.set_affair), #添加事务
-    url(r'^affair/get/$', Affair.get_affair), #获取事务
+    url(r'^add/affair/$', Affair.set_affair), #添加事务
+    url(r'^get/affair$', Affair.get_affair), #获取事务
 ]

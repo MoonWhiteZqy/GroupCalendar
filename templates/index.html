@@ -92,30 +92,12 @@
             <tr>
                 <th>#</th>
                 {% for dayname in weekdaynames %}
-                    <th>{{dayname}}</th>
+                    <th class="specday">{{dayname}}</th>
                 {% endfor %}
             </tr>
 
         </thead>
 
-        
-        {% comment %} <!-- 记录课程的表格 -->
-        <tr v-for="(content, index) in contents">
-            <td>{% verbatim myblock %}{{classes[index].name}} {{classes[index].time}}{% endverbatim myblock %}</td>
-            
-            <!-- 七天的课程 -->
-            <td v-for="jdex in myindex" v-on:click="changeText($event, index, jdex.id)"
-            data-toggle="modal" data-target="#myModal">{% verbatim myblock %}{{content[jdex.id]}}{% endverbatim myblock %}</td>
-
-            {% for dt in dtindex %}
-                {% for wd in wdindex %}
-                <td>
-                    {{courses.2.wd}}
-                </td>
-                {% endfor %}
-            {% endfor %}
-            
-        </tr> {% endcomment %}
         {%for classes, course in courses.items%}
             <tr>
             <td>{{classes}}</td>
@@ -170,97 +152,34 @@
         </div>
     </div>
 
-    <!-- 登录框体 -->
-    <!-- Modal -->
-    <div class="modal fade" id="loginModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true" data-backdrop="static">
-        <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-            <h5 class="modal-title" id="LoginTitle">登录</h5>
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-            </div>
-            <div class="modal-body">
-            <!-- <form> -->
-                <label>学号:</label>
-                <input class="form-control" id="stuid">
-                <label>密码:</label>
-                <input class="form-control" id="password" onkeypress="return onLoginKey(event)">
-            <!-- </form> -->
-            </div>
-            <div class="modal-footer">
-            {% comment %} <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button> {% endcomment %}
-            <button type="button" class="btn btn-primary" onclick="login()" id="logindismiss">登录</button>
-            </div>
-        </div>
-        </div>
-    </div>
+
 
     <script>
         var writing_affair = false;
         var changing_td;
         var changing_i, changing_j; //用于读取更改安排的格子坐标
-        var user = "";
-        var userid = "";
+        var name = "";
+        var stuid = "";
+        weekday = 0;
+        daytime = 0;
         // 初始化用户
-        if(localStorage["user"]){
-            user = localStorage["user"];
+        if(localStorage["name"]){
+            name = localStorage["name"];
         }
-        if(localStorage["userid"]){
-            userid = localStorage["userid"];
+        if(localStorage["stuid"]){
+            stuid = localStorage["stuid"];
         }
         else{
-            $('#loginModal').modal('show');
+            // 检测不到学号，跳转到登录界面
+            window.location.href = "/";
         }
-        if(user.length > 0){
-            document.getElementById("usertitle").innerHTML="你好," + user;
+        if(name.length > 0){
+            document.getElementById("usertitle").innerHTML="你好," + name;
         }
         var app = new Vue({
             el:"#app",
             data:{
-                // 课程名字
-                courses:[],
-                // 事物名字
-                affairs:[],
-                // 实际显示内容：课程+事物
-                contents:[],
-                // 上课时间
-                classes:[
-                    {name:"第一节课",time:"08:00-08:45"},
-                    {name:"第二节课",time:"08:55-09:40"},
-                    {name:"第三节课",time:"09:55-10:40"},
-                    {name:"第四节课",time:"10:50-11:35"},
-                    {name:"第五节课",time:"11:45-12:30"},
-                    {name:"第六节课",time:"13:30-14:15"},
-                    {name:"第七节课",time:"14:25-15:10"},
-                    {name:"第八节课",time:"15:25-16:10"},
-                    {name:"第九节课",time:"16:20-17:05"},
-                    {name:"第十节课",time:"17:15-18:00"},
-                    {name:'第十一节',time:"18:30-19:15"},
-                    {name:"第十二节",time:"19:25-20:10"},
-                    {name:"第十三节",time:"20:20-21:05"},
-                    {name:"第十四节",time:"21:10-24:00"},
-                ],
-                weekdays:[
-                    {name:"周一"},
-                    {name:"周二"},
-                    {name:"周三"},
-                    {name:"周四"},
-                    {name:"周五"},
-                    {name:"周六"},
-                    {name:"周日"},
-                ],
-                weekcount:0,
-                myindex:[
-                    {id:0},
-                    {id:1},
-                    {id:2},
-                    {id:3},
-                    {id:4},
-                    {id:5},
-                    {id:6}
-                ]
+                weekcount:0
             },
             methods:{
                 changeText:function(event, i, j){
@@ -275,67 +194,22 @@
             }
         })
 
-        // 为数据补全存储的索引
-        var setStorInd = function(affair){
-            var res = "";
-            if(affair.week < 10){
-                res += "0";
-            }
-            res += affair.week.toString();
-            if(affair.class < 10){
-                res += "0";
-            }
-            res += affair.class.toString();
-            res += affair.day.toString();
-            return res;
-        }
 
-
-        //用于真正修改表格内容，并且把修改后内容保存到本地存储
+        // 向服务器发送新的事务
         clearText = function(){
-            {% comment %} var nextp = document.getElementById("nextplan");
-            changing_td.innerHTML = nextp.value;
-            app.$set(app.$data.contents[changing_i], changing_j, nextp.value);
-            if(!window.localStorage){
-                console.log("无法更改");
-            }
-            else{
-                storage = window.localStorage;
-                writing_affair = true;
-                if(!writing_affair){ //写课程信息
-                    storage[changing_i * 14 + changing_j] = nextp.value;
-                    app.$set(app.$data.courses[changing_i], changing_j, nextp.value);
-                    if(nextp.value == ""){ //当删除安排时，清除本地存储，避免占据空间
-                        localStorage.removeItem(changing_i * 14 + changing_j);
-                    }
-                }
-                else{ //写事情安排
-                    var affair = {
-                        week:app.$data.weekcount,
-                        class:changing_i,
-                        day:changing_j,
-                        thing:nextp.value
-                    };
-                    affstr = setStorInd(affair);//存储的索引id
-                    storage[affstr] = JSON.stringify(affair);
-                    app.$set(app.$data.affairs[changing_i], changing_j, nextp.value);
-                    if(nextp.value == ""){
-                        localStorage.removeItem(affstr);
-                    }
-                }
-                location.reload(); //刷新页面，防止不更新
-            } {% endcomment %}
-
             var mydata = {
                 "stuid":"17307130109",
                 "name":"zqy",
-                "secret":"123456",
-                "gender":"难"
+                "affair":document.getElementById("nextplan").value,
+                "weeknum":app.$data.weekcount,
+                "weekday":weekday,
+                "daytime":daytime
             }
+            console.log(mydata);
             $.ajax({
                 type:"POST",
                 dataType:"json",
-                url:"/add/student/",
+                url:"/add/affair/",
                 contentType:"application/json",
                 data:JSON.stringify(mydata),
                 success:function(result){
@@ -345,29 +219,6 @@
             });
         }
 
-        login = function(){
-            var logindata = {
-                "stuid":document.getElementById("stuid").value,
-                "secret":document.getElementById("password").value
-            }
-            $.ajax({
-                type:"POST",
-                dataType:"json",
-                url:"/login/",
-                contentType:"application/json",
-                data:JSON.stringify(logindata),
-                success:function(result){
-                    if(result["status"] == "success"){
-                        $('#loginModal').modal('hide');
-                        localStorage["user"] = result["name"];
-                        localStorage["userid"] = result["id"];
-                    }
-                    else{
-                        document.getElementById("LoginTitle").innerHTML = result["reason"];
-                    }
-                }
-            })
-        }
 
         // 按下回车后保存修改信息
         function onKey(event){
@@ -376,66 +227,8 @@
             }
         }
 
-        function onLoginKey(event){
-            if(event.keyCode == "13"){
-                document.getElementById("logindismiss").click();
-            }
-        }
 
-        {% comment %} // 读取本地存储数据
-        readst = function(){
-            if(!window.localStorage){
-                console.log("无法读取");
-            }
-            else{
-                affairs = new Array();
-                var week = app.$data.weekcount;
-                for(var i = 0; i < localStorage.length; i++){
-                    var numindex = localStorage.key(i);
-                    if(numindex.length == 5){
-                        affairs.push(numindex);
-                        continue;
-                    }
-                    var x = Math.floor(numindex / 14); //找到数据存储的行数
-                    var y = numindex % 14;  //找到数据存储的列
-                    app.$set(app.$data.courses[x], y, localStorage[numindex]); //写入数据并更新页面
-                }
-                //先对事务进行清空，然后再寻找
-                for(var i = 0; i < 14; i++){
-                    for(var j = 0; j < 7; j++){
-                        app.$set(app.$data.affairs[i], j, "");
-                    }
-                }
-                for(var i = 0; i < affairs.length; i++){
-                    var affair = JSON.parse(localStorage[affairs[i]]);
-                    var x = affair.class;
-                    var y = affair.day;
-                    var thing = affair.thing;
-                    if(affair.week == week){ //判断时间是否在这周
-                        app.$set(app.$data.affairs[x], y, thing);
-                    }
-                }
-                for(var i = 0; i < 14; i++){
-                    for(var j = 0; j < 7; j++){
-                        app.$set(app.$data.contents[i], j, app.$data.courses[i][j] + app.$data.affairs[i][j]);
-                    }
-                }
-            }
-        }
-         {% endcomment %}
-        
-
-        // 清除本地存储数据
-        cleast = function(){
-            if(!window.localStorage){
-                console.log("无法清除");
-            }
-            else{
-                storage = window.localStorage;
-                storage.clear();
-            }
-        }
-
+        // 表格框体点击后弹出输入框，并更改输入框标题
         var cts = document.getElementsByClassName("content");
         for(var i = 0; i < cts.length; i++){
             cts[i].index = i;
@@ -445,28 +238,11 @@
                 y = this.index % 7 + 1;
                 document.getElementById("ModalLabel").innerHTML = "星期" + y + "第" + x + "节课";
                 document.getElementById("nextplan").value = cts[rindex].innerHTML;
+                weekday = y;
+                daytime = x;
             }
         }
 
-        
-    </script>
-
-
-    <script>
-        var weekname = ["周一","周二","周三","周四","周五","周六","周日"];
-        for(var i = 0; i < 14; i++){
-            course = new Array(7);
-            affair = new Array(7);
-            content = new Array(7);
-            for(var j = 0; j < 7; j++){
-                course[j] = "";
-                affair[j] = "";
-                content[j] = "";
-            }
-            app.$data.courses.push(course);
-            app.$data.affairs.push(affair);
-            app.$data.contents.push(content);
-        }
 
         Date.prototype.toDayString = function(){
             return this.getFullYear() + '年' + (this.getMonth() + 1).toString() + '月' + this.getDate() + '日';
@@ -480,10 +256,12 @@
         var setday = function(indexdate){
             var dayx = (indexdate.getDay() + 6) % 7; //重新定位，新的一周从周一开始
             var monday = new Date(indexdate.getTime() - 86400000 * dayx);
+            var stamp = document.getElementsByClassName("specday");
+            var daynames = {{ weekdaynames | safe }};
             for(var i = 0; i < 7; i++){ //为每一天加上日期
                 var today = new Date(monday.getTime() + 86400000 * i);
-                today = today.toDayString() + ' ' + weekname[i];
-                app.$set(app.$data.weekdays[i], 'name', today);
+                today = today.toDayString();
+                stamp[i].innerHTML = today + " " + daynames[i];
             }
             var weekc = Math.floor((date - beginday) / (7 * 24 * 3600000)); //定义当前所处的星期
             app.$set(app.$data, 'weekcount', weekc);
@@ -517,15 +295,39 @@
                 document.getElementById("nextli").setAttribute("class", "page-item");
                 document.getElementById("nexta").setAttribute("tabindex", 0);
             }
-            {% comment %} readst(); {% endcomment %}
+            var get_week_data = {
+                "stuid":stuid,
+                "currweek":weeklocal
+            }
+            $.ajax({
+                type:"POST",
+                url:"/get/affair",
+                dataType:"json",
+                contentType:"application/json",
+                data:JSON.stringify(get_week_data),
+                success:function(result){
+                    var resaffair = result["data"];
+                    var exist_course = {{courses|safe}};
+                    var courses = new Array;
+                    for(key in exist_course){
+                        courses = courses.concat(exist_course[key]); 
+                    }
+                    var tables = document.getElementsByClassName("content");
+                    for(var i = 0; i < tables.length; i++){
+                        tables[i].innerHTML = courses[i];
+                    }
+                    if(result["status"] == "success"){
+                        for(var i = 0; i < resaffair.length; i++){
+                            var data = resaffair[i];
+                            var x = data["daytime"] - 1;
+                            var y = data["weekday"] - 1;
+                            tables[x * 7 + y].innerHTML = courses[x * 7 + y] + data["affair"];
+                        }
+                    }
+                }
+            })
         }
-        
-        {% comment %} readst(); {% endcomment %}
-
-
-        // 获取某节课的时间戳
-        // 格式为：第几周、第几天、第几节
-        // var getStamp = function()
+        changeweek(0);
 
 
 

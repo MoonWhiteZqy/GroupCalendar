@@ -82,13 +82,7 @@ class Student(View):
     def login(request):
         data = request.body
         jdata = json.loads(data)
-        # stuid = request.GET.get("stuid")
-        # secret = request.GET.get("secret")
         reason, status = StudentModel.login_confirm(jdata['stuid'], jdata['secret'])
-        # context = {}
-        # return redirect("/index/")
-        # print(reason)
-        # return HttpResponseRedirect("/index/", "hhh")
         if status:
             return HttpResponse(success(reason))
         return HttpResponse(fail(reason))
@@ -99,25 +93,26 @@ class Affair(View):
         reason, status = AffairModel.add_by_json(jdata)
 
         if not status:
-            return HttpResponse(fail({"reason":reason}))
+            return HttpResponse(fail(reason))
         return HttpResponse(success(jdata))
 
     def get_affair(request):
-        id = request.GET.get('stuid')
-        affairs = AffairModel.objects(stuid = id)
-        infos = {}
-        count = 0
+        data = request.body
+        jdata = json.loads(data)
+        id = jdata["stuid"]
+        week = jdata["currweek"]
+        affairs = AffairModel.objects(stuid = id, weeknum = week)
+        infos = []
         for affair in affairs:
             info = {
                 'stuid':affair.stuid,
                 'weeknum':affair.weeknum,
                 'weekday':affair.weekday,
                 'daytime':affair.daytime,
-                'affair:':affair.affairname
+                'affair':affair.affairname
             }
-            infos[count] = info
-            count += 1
+            infos.append(info)
         
         if len(infos) == 0:
             return HttpResponse(fail({"reason":"No affairs"}))
-        return HttpResponse(success(infos))        
+        return HttpResponse(success({"data":infos}))        

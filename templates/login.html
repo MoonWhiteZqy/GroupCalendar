@@ -67,7 +67,7 @@
         <h1 class="h3 mb-3 font-weight-normal" id="htitle">登录</h1>
         <input type="text" id="inputStuid" class="form-control" placeholder="StudentId" required autofocus>
 
-        <input type="password" id="inputPassword" class="form-control" placeholder="Password" required>
+        <input type="password" id="inputPassword" class="form-control" placeholder="Password" required onkeypress="return onKey(event)">
 
         <div class="checkbox mb-3">
             <label>
@@ -87,6 +87,12 @@
     }
     if(localStorage["secret"]){
       $("#inputPassword").val(localStorage["secret"]);
+    }
+
+    function onKey(event){
+      if(event.keyCode == "13"){
+        signin();
+      }
     }
 
     signin = function(){
@@ -111,6 +117,7 @@
           res = JSON.parse(xhr.responseText);
           console.log(res);
           if(res["status"] == "success"){
+            localStorage["name"] = res["name"];
             window.location.href = "/index/?stuid=" + res["id"];
           }
           else{
@@ -121,6 +128,9 @@
       xhr.send(JSON.stringify(data));}
       postthing();
 
+    }
+    if(localStorage["secret"].length > 0){
+      signin();
     }
 
   </script>

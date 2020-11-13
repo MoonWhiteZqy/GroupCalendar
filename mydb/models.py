@@ -77,17 +77,17 @@ class AffairModel(mongoengine.Document):
         student = StudentModel.objects(stuid = stuid2add).first()
         # 检验数据是否合理
         if not student:
-            return "ID not found", False
+            return {"reason":"ID not found"}, False
         if student.name != name2add:
-            return "Not this student", False
+            return {"reason":"Not this student"}, False
         if week2add > 7:
-            return "No this day", False
+            return {"reason":"No this day"}, False
         if day2add > 14:
-            return "No this class time", False
+            return {"reason":"No this class time"}, False
         if weekcount > 18:
-            return "No this week", False
+            return {"reason":"No this week"}, False
         
         affair = AffairModel(stuid = stuid2add, name = name2add, affairname = affair2add, weekday = week2add, daytime = day2add, weeknum = weekcount)
         affair.save()
 
-        return "success", True
+        return {"reason":"success"}, True
