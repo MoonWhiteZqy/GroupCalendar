@@ -6,7 +6,7 @@ from django.views.generic import View
 from GroupCalendar import views
 import json
 
-def success(**kwargs):
+def success(kwargs):
     res = {'status':'success'}
     if kwargs:
         for k, v in kwargs.items():
@@ -80,13 +80,14 @@ class Student(View):
         return HttpResponse(fail())
 
     def login(request):
-        # data = request.body
-        # jdata = json.loads(data)
+        data = request.body
+        jdata = json.loads(data)
         # stuid = request.GET.get("stuid")
         # secret = request.GET.get("secret")
-        # reason, status = StudentModel.login_confirm(jdata['stuid'], jdata['secret'])
-        context = {}
-        return redirect("/index/")
+        reason, status = StudentModel.login_confirm(jdata['stuid'], jdata['secret'])
+        # context = {}
+        # return redirect("/index/")
+        # print(reason)
         # return HttpResponseRedirect("/index/", "hhh")
         if status:
             return HttpResponse(success(reason))

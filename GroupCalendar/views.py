@@ -4,6 +4,7 @@ from mydb.views import *
 
 def index(request):
     context = {}
+    stuid = request.GET.get("stuid")
     context['weekdaynames'] = [
         "星期一",
         "星期二",
@@ -30,7 +31,7 @@ def index(request):
         "第十四节 21:10-24:00"
     ]
     context['courses'] = {}
-    courses = Course.table_get_course('17307130109')
+    courses = Course.table_get_course(stuid)
     # courses = Course.table_get_course('')
     for i in range(14):
         context['courses'][classes[i]] = courses[i]

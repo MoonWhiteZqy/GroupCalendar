@@ -108,34 +108,18 @@
         var rescontent = xhr.responseText;
         var mestitle = document.getElementById("htitle");
         if(xhr.readyState == 4 && xhr.status == 200){
-          // console.log(rescontent);
-          window.document.write(rescontent);
-          // var message = JSON.parse(rescontent);
-          // if(message["status"] == "fail"){
-          //   mestitle.innerHTML = message["reason"];
-          // }
-          // else{
-          //   mestitle.innerHTML = "成功，正在跳转";
-          //   window.location = "/index/";
-          // }
+          res = JSON.parse(xhr.responseText);
+          console.log(res);
+          if(res["status"] == "success"){
+            window.location.href = "/index/?stuid=" + res["id"];
+          }
+          else{
+            mestitle.innerHTML = res["reason"];
+          }
         }
       }
       xhr.send(JSON.stringify(data));}
-
-      var xhr = new XMLHttpRequest();
-      var myurl = "/login/?stuid=";
-      myurl += document.getElementById("inputStuid").value;
-      myurl += "&secret=";
-      myurl += document.getElementById("inputPassword").value;
-      console.log(myurl);
-      xhr.open("GET", "/login/", true);
-      xhr.send();
-      xhr.onreadystatechange = function(){
-        if(xhr.readyState == 4 && xhr.status == 200){
-          var res = xhr.responseText;
-          console.log(xhr);
-        }
-      }
+      postthing();
 
     }
 
