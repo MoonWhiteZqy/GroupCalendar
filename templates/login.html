@@ -74,12 +74,34 @@
                 <input type="checkbox" value="remember-me" id="chebox">
                 Remember me
             </label>
+            <br>
+            <a type="button" data-toggle="modal" data-target="#regModal" href="#">没有帐号？点这里</a>
         </div>
         <button class="btn btn-lg btn-primary btn-block" onclick="signin()">登录</button>
         <p class="mt-5 mb-3 text-muted">Powered by Zqy</p>
     </div>
 
-    
+    <!-- Modal -->
+    <div class="modal fade" id="regModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="regLabel">注册一个帐号吧</h5>
+          </div>
+          <div class="modal-body">
+            <div class="form-signin">
+              <input type="text" id="regStuid" placeholder="学号" class="form-control" required autofocus>
+              <input type="text" id="regName" class="form-control" placeholder="姓名">
+              <input type="password" id="regPassword" class="form-control" placeholder="密码" onkeypress="regOnkey(event)">
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+            <button type="button" class="btn btn-primary" onclick="register()">注册</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </body>
   <script>
     if(localStorage["stuid"]){
@@ -93,6 +115,39 @@
       if(event.keyCode == "13"){
         signin();
       }
+    }
+
+    function regOnkey(event){
+      if(event.keyCode == "13"){
+        register();
+      }
+    }
+
+    register = function(){
+      data = {
+        "stuid":document.getElementById("regStuid").value,
+        "name":document.getElementById("regName").value,
+        "secret":document.getElementById("regPassword").value
+      }
+      $.ajax({
+        type:"POST",
+        dataType:"JSON",
+        url:"/add/student/",
+        contentType:"application/json",
+        data:JSON.stringify(data),
+        success:function(result){
+          if(result["status"] == "success"){
+            localStorage["stuid"] = result["stuid"];
+            localStorage["secret"] = result["secret"];
+            $("#inputStuid").val(localStorage["stuid"]);
+            $("#inputPassword").val(localStorage["secret"]);
+            signin();
+          }
+          else{
+            document.getElementById("regLabel").innerHTML = result["reason"];
+          }
+        }
+      })
     }
 
     signin = function(){

@@ -37,18 +37,24 @@ class StudentModel(mongoengine.Document):
     stuid = mongoengine.StringField(max_length=12, required=True, unique=True) #学生学号
     name = mongoengine.StringField(max_length=5) #学生姓名
     secret = mongoengine.StringField(max_length=16, min_length=6) #密码
-    gender = mongoengine.StringField(max_length=1, min_length=1) #性别
 
     def add_student(jdata):
         stuid2add = jdata['stuid']
         name2add = jdata['name']
         secret2add = jdata['secret']
-        gender2add = jdata['gender']
 
-        student = StudentModel(stuid=stuid2add, name=name2add, secret=secret2add, gender = gender2add)
+        data = StudentModel.objects(stuid = stuid2add)
+        if len(data) > 0:
+            return {"reason":"该学号已存在"}, False
+        if len(stuid2add) != 11:
+            return {"reason":"学号长度不正确"}, False
+        if len(secret2add) < 6 or len(secret2add) > 16:
+            return {"reason":"密码长度不合适"}, False
+        
+        student = StudentModel(stuid=stuid2add, name=name2add, secret=secret2add)
         student.save()
 
-        return True
+        return {"reason":"添加成功"}, True
 
     def login_confirm(id, password):
         stu = StudentModel.objects(stuid = id).first()

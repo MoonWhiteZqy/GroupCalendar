@@ -75,9 +75,10 @@ class Student(View):
         data = request.body
         jdata = json.loads(data)
 
-        if StudentModel.add_student(jdata):
-            return HttpResponse(success())
-        return HttpResponse(fail())
+        reason, status = StudentModel.add_student(jdata)
+        if status:
+            return HttpResponse(success(jdata))
+        return HttpResponse(fail(reason))
 
     def login(request):
         data = request.body
