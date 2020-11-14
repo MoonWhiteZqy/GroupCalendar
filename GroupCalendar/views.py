@@ -39,4 +39,7 @@ def index(request):
     return render(request, 'index.html', context)
 
 def login(request):
-    return render(request, 'login.html')    
+    return render(request, 'login.html')
+
+def group(request):
+    return HttpResponse("To be continued")

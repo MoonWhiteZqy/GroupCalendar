@@ -32,7 +32,7 @@ class CourseModel(mongoengine.Document):
         if day2add > 14:
             return {"reason":"时间错误"}, False
         
-        find_obj = CourseModel.objects(stuid = stuid2add, name = name2add, weekday = week2add, daytime = day2add)
+        find_obj = CourseModel.objects(stuid = stuid2add, name = name2add, weekday = week2add, daytime = day2add).first()
 
         if not find_obj:
             course = CourseModel(stuid = stuid2add, name = name2add, coursename = course2add, weekday = week2add, daytime = day2add)
