@@ -60,14 +60,15 @@ class Course(View):
         return data
 
 
-    def propost(request):
+    def add_course(request):
         data = request.body
         jdata = json.loads(data) #把post信息转化为json格式
 
         # 加入数据库
-        if CourseModel.add_by_json(jdata):
-            return HttpResponse(success())
-        return HttpResponse(fail())
+        reason, status = CourseModel.add_by_json(jdata)
+        if status:
+            return HttpResponse(success(jdata))
+        return HttpResponse(fail(reason))
 
 class Student(View):
     def add(request):

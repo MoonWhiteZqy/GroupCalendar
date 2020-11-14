@@ -18,20 +18,33 @@ class CourseModel(mongoengine.Document):
         """
         stuid2add = jdata['stuid']
         name2add = jdata['name']
-        course2add = jdata['coursename']
+        course2add = jdata['course']
         week2add = jdata['weekday']
         day2add = jdata['daytime']
 
         student = StudentModel.objects(stuid = stuid2add).first()
         if not student:
-            return False
+            return {"reason":"找不到当前学生"}, False
         if student.name != name2add:
-            return False
+            return {"reason":"学生名字错误"}, False
+        if week2add > 7:
+            return {"reason":"日期错误"}, False
+        if day2add > 14:
+            return {"reason":"时间错误"}, False
         
-        course = CourseModel(stuid = stuid2add, name = name2add, coursename = course2add, weekday = week2add, daytime = day2add)
-        course.save()
+        find_obj = CourseModel.objects(stuid = stuid2add, name = name2add, weekday = week2add, daytime = day2add)
 
-        return True
+        if not find_obj:
+            course = CourseModel(stuid = stuid2add, name = name2add, coursename = course2add, weekday = week2add, daytime = day2add)
+            course.save()
+        else:
+            find_obj.coursename = course2add
+            if len(course2add) == 0:
+                find_obj.delete()
+            else:
+                find_obj.save()
+
+        return {"reason":"success"}, True
 
 class StudentModel(mongoengine.Document):
     stuid = mongoengine.StringField(max_length=12, required=True, unique=True) #学生学号
@@ -59,9 +72,9 @@ class StudentModel(mongoengine.Document):
     def login_confirm(id, password):
         stu = StudentModel.objects(stuid = id).first()
         if not stu:
-            return {"reason":"id doesn't exist"}, False
+            return {"reason":"找不到该帐号"}, False
         if stu.secret != password:
-            return {"reason":"password is wrong"}, False
+            return {"reason":"密码错误"}, False
         return {"name":stu.name, "id":id}, True
 
 class AffairModel(mongoengine.Document):
@@ -83,17 +96,25 @@ class AffairModel(mongoengine.Document):
         student = StudentModel.objects(stuid = stuid2add).first()
         # 检验数据是否合理
         if not student:
-            return {"reason":"ID not found"}, False
+            return {"reason":"找不到当前学生"}, False
         if student.name != name2add:
-            return {"reason":"Not this student"}, False
+            return {"reason":"学生名字错误"}, False
         if week2add > 7:
-            return {"reason":"No this day"}, False
+            return {"reason":"日期错误"}, False
         if day2add > 14:
-            return {"reason":"No this class time"}, False
+            return {"reason":"时间错误"}, False
         if weekcount > 18:
-            return {"reason":"No this week"}, False
+            return {"reason":"星期错误"}, False
         
-        affair = AffairModel(stuid = stuid2add, name = name2add, affairname = affair2add, weekday = week2add, daytime = day2add, weeknum = weekcount)
-        affair.save()
+        find_obj = AffairModel.objects(stuid = stuid2add, name = name2add, weekday = week2add, daytime = day2add, weeknum = weekcount).first()
+        if not find_obj:
+            affair = AffairModel(stuid = stuid2add, name = name2add, affairname = affair2add, weekday = week2add, daytime = day2add, weeknum = weekcount)
+            affair.save()
+        else:
+            find_obj.affairname = affair2add
+            if len(affair2add) == 0:
+                find_obj.delete()
+            else:
+                find_obj.save()
 
         return {"reason":"success"}, True

@@ -10,7 +10,8 @@
 
     <!-- Optional JavaScript -->
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
-    <script src="https://code.jquery.com/jquery-3.5.1.js" integrity="sha256-QWo7LDvxbWT2tbbQ97B53yJnYU3WhH/C8ycbRAkjPDc=" crossorigin="anonymous"></script>
+    {% comment %} <script src="https://code.jquery.com/jquery-3.5.1.js" integrity="sha256-QWo7LDvxbWT2tbbQ97B53yJnYU3WhH/C8ycbRAkjPDc=" crossorigin="anonymous"></script> {% endcomment %}
+    <script src="{% static jquery-3.5.1.js %}"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" 
     integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/js/bootstrap.min.js" 
@@ -64,12 +65,12 @@
               <a class="nav-link" href="#">团队安排</a>
             </li>
             <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                切换模式
+              <a class="nav-link dropdown-toggle" href="#" id="modenow" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                事务模式
               </a>
-              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-                <a class="dropdown-item" href="#">课程安排</a>
-                <a class="dropdown-item" href="#">事务安排</a>
+              <div class="dropdown-menu" aria-labelledby="modenow">
+                <a class="dropdown-item" href="#" onclick="mode2course()">课程模式</a>
+                <a class="dropdown-item" href="#" onclick="mode2affair()">事务模式</a>
                 <div class="dropdown-divider"></div>
                 <a class="dropdown-item" href="#">Something else here</a>
               </div>
@@ -161,6 +162,7 @@
         var changing_i, changing_j; //用于读取更改安排的格子坐标
         var name = "";
         var stuid = "";
+        var mode = "affair";
         weekday = 0;
         daytime = 0;
         // 初始化用户
@@ -206,25 +208,43 @@
             window.location.href = loginAdr;
         }
 
+        mode2affair = function(){
+            $("#modenow").text("事务模式");
+            mode = "affair";
+        }
+
+        mode2course = function(){
+            $("#modenow").text("课程模式");
+            mode = "course";
+        }
+
         // 向服务器发送新的事务
         clearText = function(){
             var mydata = {
                 "stuid":"17307130109",
                 "name":"zqy",
-                "affair":document.getElementById("nextplan").value,
                 "weeknum":app.$data.weekcount,
                 "weekday":weekday,
                 "daytime":daytime
             }
+            mydata[mode] = document.getElementById("nextplan").value;
+            url2send = "/add/" + mode + "/";
             $.ajax({
                 type:"POST",
                 dataType:"json",
-                url:"/add/affair/",
+                url:url2send,
                 contentType:"application/json",
                 data:JSON.stringify(mydata),
                 success:function(result){
-                    console.log("result = ", result);
-
+                    if(result["status"] == "success"){
+                        document.getElementsByClassName("content")[(daytime - 1) * 7 + weekday - 1].innerHTML = result[mode];
+                        if(mode == "course"){
+                            location.reload();
+                        }
+                    }
+                    else{
+                        document.getElementsByClassName("content")[(daytime - 1) * 7 + weekday - 1].innerHTML = result["reason"] + ",添加失败";
+                    }
                 }
             });
         }
