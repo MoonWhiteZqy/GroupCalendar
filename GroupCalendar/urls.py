@@ -17,7 +17,7 @@ from django.contrib import admin
 from django.urls import path
 from django.conf.urls import url
 from . import views
-from mydb.views import Course, Student, Affair
+from mydb.views import Course, Student, Affair, Group, GroupAffair
 
 urlpatterns = [
     # path('admin/', admin.site.urls),
@@ -30,4 +30,11 @@ urlpatterns = [
     url(r'^login/$', Student.login), #用户登录
     url(r'^add/affair/$', Affair.set_affair), #添加事务
     url(r'^get/affair$', Affair.get_affair), #获取事务
+    url(r'^group/join$', Group.join_group), #加入小组
+    url(r'^group/create$', Group.create_group), #创建小组
+    url(r'^group/leave$', Group.leave_group), #离开小组
+    url(r'^group/change$', Group.change_leader), #更改组长
+    url(r'^group/show$', Group.show_group), #展示加入的小组
+    url(r'^group/destroy$', Group.destroy_group), #组长解散自己的小组
+    url(r'^group/affair/change$', GroupAffair.change_group_affair), #组长添加、删除小组事务
 ]

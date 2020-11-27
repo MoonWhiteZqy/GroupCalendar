@@ -1,7 +1,7 @@
 from django.shortcuts import render, HttpResponse, HttpResponseRedirect, redirect, reverse
 
 # Create your views here.
-from .models import CourseModel, StudentModel, AffairModel
+from .models import CourseModel, StudentModel, AffairModel, GroupModel, GroupAffairModel
 from django.views.generic import View
 from GroupCalendar import views
 import json
@@ -118,3 +118,59 @@ class Affair(View):
         if len(infos) == 0:
             return HttpResponse(fail({"reason":"No affairs"}))
         return HttpResponse(success({"data":infos}))        
+
+class Group(View):
+    def create_group(request):
+        data = request.body
+        jdata = json.loads(data)
+        reason, status = GroupModel.create_group(jdata)
+        if not status:
+            return HttpResponse(fail(reason))
+        return HttpResponse(success(jdata))
+
+    def join_group(request):
+        data = request.body
+        jdata = json.loads(data)
+        reason, status = GroupModel.join_group(jdata)
+        if not status:
+            return HttpResponse(fail(reason))
+        return HttpResponse(success(jdata))
+
+    def leave_group(request):
+        data = request.body
+        jdata = json.loads(data)
+        reason, status = GroupModel.leave_group(jdata)
+        if not status:
+            return HttpResponse(fail(reason))
+        return HttpResponse(success(reason))
+
+    def change_leader(request):
+        data = request.body
+        jdata = json.loads(data)
+        reason, status = GroupModel.change_leader(jdata)
+        if not status:
+            return HttpResponse(fail(reason))
+        return HttpResponse(success(reason))
+
+    def show_group(request):
+        data = request.body
+        jdata = json.loads(data)
+        reslist = GroupModel.show_groups(jdata)
+        return HttpResponse(reslist)
+
+    def destroy_group(request):
+        data = request.body
+        jdata = json.loads(data)
+        reason, status = GroupModel.destroy_group(jdata)
+        if not status:
+            return HttpResponse(fail(reason))
+        return HttpResponse(success(reason))
+
+class GroupAffair(View):
+    def change_group_affair(request):
+        data = request.body
+        jdata = json.loads(data)
+        reason, status = GroupAffairModel.change_group_affair(jdata)
+        if not status:
+            return HttpResponse(fail(reason))
+        return HttpResponse(success(reason))
