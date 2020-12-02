@@ -22,6 +22,9 @@
     <link rel="stylesheet" href="{% static 'bootstrap.min.css' %}"> {% endcomment %}
     
 
+    <link rel="stylesheet" href="https://unpkg.com/bootstrap-table@1.18.0/dist/bootstrap-table.min.css">
+    <script src="https://unpkg.com/bootstrap-table@1.18.0/dist/bootstrap-table.min.js"></script>
+
     <!-- Vue -->
     <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script>
 
@@ -41,7 +44,7 @@
         td{
             background-color: aliceblue;
         }
-        td:hover{
+        td.tdcl:hover{
             background-color:aqua;
         }
     </style>
@@ -77,12 +80,34 @@
             </li>
           </ul>
           <div class="form-inline my-2 my-lg-0">
-            <input class="form-control mr-sm-2" placeholder="Search" aria-label="Search">
-            <button class="btn btn-outline-success my-2 my-sm-0">Search</button>
+            <input class="form-control mr-sm-2" placeholder="通过组长学号查找" aria-label="Search" id="leaderinp">
+            <button class="btn btn-outline-success my-2 my-sm-0" onclick="search_group()">查找</button>
+            <button class="btn btn-outline-success my-2 my-sm-0" onclick="show_group()">我的</button>
             <button class="btn btn-outline-success my-2 my-sm-0" onclick="logout()">退出</button>
           </div>
         </div>
       </nav>
+
+    <div class="modal fade" id="staticModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title" id="staticBackdropLabel">获得的小组列表</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="modal-body">
+            <table class="table" id="gtable">
+            </table>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">关闭</button>
+            {% comment %} <button type="button" class="btn btn-primary">Understood</button> {% endcomment %}
+        </div>
+        </div>
+    </div>
+    </div>
 
 
 
@@ -104,7 +129,7 @@
             <tr>
             <td>{{classes}}</td>
             {% for coursename in course %}
-                <td data-toggle="modal" data-target="#myModal" class="content">
+                <td data-toggle="modal" data-target="#myModal" class="content tdcl">
                     {{coursename}}
                 </td>
             {% endfor %}
@@ -197,6 +222,95 @@
             }
         })
 
+        function addTableButton(value, row, index){
+            return [
+            '<button id="join_g" type="button" class="btn btn-primary">加入</button>'
+            ].join('');
+        }
+
+        window.buttonEvents = {
+            'click #join_g' :function(e, value, row, index){
+                mydata = {
+                    "stuid":stuid,
+                    "groupid":row["groupid"]
+                };
+                $.ajax({
+                    type:"POST",
+                    dataType:"json",
+                    url:"/group/join",
+                    contentType:"application/json",
+                    data:JSON.stringify(mydata),
+                    success:function(result){
+                        if(result["status"] == "success"){
+                            $("#staticBackdropLabel").text("加入成功");
+                        }
+                        else{
+                            $("#staticBackdropLabel").text(result["reason"]);
+                        }
+                        $(e.currentTarget).attr("disabled", true);
+                    }
+                });
+            }
+        }
+
+        function myaddTableButton(value, row, index){
+            return [
+            '<button id="exit_g" type="button" class="btn btn-primary">退出</button>',
+            '<button id="disb_g" type="button" class="btn btn-primary">解散</button>',
+            '<button id="enter_g" type="button" class="btn btn-primary">进入</button>'
+            ].join('');
+        }
+
+        window.mybuttonEvents = {
+            'click #exit_g' :function(e, value, row, index){
+                mydata = {
+                    "stuid":stuid,
+                    "groupid":row["groupid"]
+                };
+                $.ajax({
+                    type:"POST",
+                    dataType:"json",
+                    url:"/group/leave",
+                    contentType:"application/json",
+                    data:JSON.stringify(mydata),
+                    success:function(result){
+                        if(result["status"] == "success"){
+                            $("#staticBackdropLabel").text("退出成功");
+                        }
+                        else{
+                            $("#staticBackdropLabel").text(result["reason"]);
+                        }
+                        $(e.currentTarget).attr("disabled", true);
+                    }
+                });
+            },            
+            'click #disb_g' :function(e, value, row, index){
+                mydata = {
+                    "stuid":stuid,
+                    "groupid":row["groupid"]
+                };
+                $.ajax({
+                    type:"POST",
+                    dataType:"json",
+                    url:"/group/destroy",
+                    contentType:"application/json",
+                    data:JSON.stringify(mydata),
+                    success:function(result){
+                        if(result["status"] == "success"){
+                            $("#staticBackdropLabel").text("小组解散成功");
+                        }
+                        else{
+                            $("#staticBackdropLabel").text(result["reason"]);
+                        }
+                        $(e.currentTarget).attr("disabled", true);
+                    }
+                });
+            },
+            'click #enter_g' :function(e, value, row, index){
+                window.location.href = '/group/?groupid=' + row["groupid"];
+            }
+        }
+
         logout = function(){
             localStorage["secret"] = "";
             var j;
@@ -256,6 +370,120 @@
                     }
                 }
             });
+        }
+
+        search_group = function(){
+            $("#staticBackdropLabel").text("该组长的小组");
+            $.ajax({
+                type:"POST",
+                dataType:"json",
+                url:"/group/search",
+                contentType:"application/json",
+                data:JSON.stringify({"leaderid":document.getElementById("leaderinp").value}),
+                success:function(result){
+                    if(result["status"] == "success"){
+                        $("#staticModal").modal("show");
+                        if(result["len"] == 0){
+                            $("#gtable").bootstrapTable("destroy");
+                            $("#gtable").bootstrapTable({
+                                columns:[{
+                                    field:"info",
+                                    title:"查无数据"
+                                },{
+                                    field:"help",
+                                    title:"请检查学号"
+                                }],
+                                data:[{
+                                    info:"-",
+                                    help:"-"
+                                }]
+                            })
+                        }
+                        else{
+                            $("#gtable").bootstrapTable("destroy");
+                            res = result["data"];
+                            myjson = new Object();
+                            myjson.columns = [{
+                                field:"groupid",
+                                title:"小组序号"
+                            },{
+                                field:"groupname",
+                                title:"小组名称"
+                            },{
+                                field:"operate",
+                                title:"操作",
+                                align:"center",
+                                events:buttonEvents,
+                                formatter:addTableButton
+                            }]
+                            myjson.data = res;
+                            $("#gtable").bootstrapTable(myjson);
+                        }
+                    }
+                    else{
+                        console.log("发送失败");
+                    }
+                }
+            })
+        }
+
+
+        show_group = function(){
+            $("#staticBackdropLabel").text("我的小组");
+            $.ajax({
+                type:"POST",
+                dataType:"json",
+                url:"/group/show",
+                contentType:"application/json",
+                data:JSON.stringify({"stuid":stuid}),
+                success:function(result){
+                    $("#staticModal").modal("show");
+                    console.log(result);
+                    if(result.length == 0){
+                        $("#gtable").bootstrapTable("destroy");
+                        $("#gtable").bootstrapTable({
+                            columns:[{
+                                field:"info",
+                                title:"查无数据"
+                            },{
+                                field:"help",
+                                title:"还未加入小组"
+                            }],
+                            data:[{
+                                info:"-",
+                                help:"-"
+                            }]
+                        })
+                    }
+                    else{
+                        $("#gtable").bootstrapTable("destroy");
+                        res = result["data"];
+                        myjson = new Object();
+                        myjson.columns = [{
+                            field:"groupid",
+                            title:"小组序号"
+                        },{
+                            field:"groupname",
+                            title:"小组名称"
+                        },{
+                            field:"leader",
+                            title:"组长"
+                        },{
+                            field:"permission",
+                            title:"权限"
+                        },{
+                            field:"operate",
+                            title:"操作",
+                            align:"center",
+                            events:mybuttonEvents,
+                            formatter:myaddTableButton
+                        }]
+                        myjson.data = res;
+                        $("#gtable").bootstrapTable(myjson);
+                    }
+                }
+            })
+
         }
 
 

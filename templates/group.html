@@ -57,29 +57,18 @@
       
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
           <ul class="navbar-nav mr-auto">
-            <li class="nav-item active">
-              <a class="nav-link" href="#">我的安排</a>
-            </li>
             <li class="nav-item">
-              <a class="nav-link" href="#" onclick="switch2me()">团队安排 <span class="sr-only">(current)</span></a>
+              <a class="nav-link" href="#" onclick="switch2me()">我的安排</a>
             </li>
-            <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle" href="#" id="modenow" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                事务模式
-              </a>
-              <div class="dropdown-menu" aria-labelledby="modenow">
-                <a class="dropdown-item" href="#" onclick="mode2course()">课程模式</a>
-                <a class="dropdown-item" href="#" onclick="mode2affair()">事务模式</a>
-                <div class="dropdown-divider"></div>
-                <a class="dropdown-item" href="#">Something else here</a>
-              </div>
+            <li class="nav-item active">
+              <a class="nav-link" href="#">团队安排</a>
             </li>
           </ul>
-          <div class="form-inline my-2 my-lg-0">
+          {% comment %} <div class="form-inline my-2 my-lg-0">
             <input class="form-control mr-sm-2" placeholder="Search" aria-label="Search">
             <button class="btn btn-outline-success my-2 my-sm-0">Search</button>
             <button class="btn btn-outline-success my-2 my-sm-0" onclick="logout()">退出</button>
-          </div>
+          </div> {% endcomment %}
         </div>
       </nav>
 
@@ -99,12 +88,12 @@
 
         </thead>
 
-        {%for classes, course in courses.items%}
+        {%for classes, affair in affairs.items%}
             <tr>
             <td>{{classes}}</td>
-            {% for coursename in course %}
+            {% for affairname in affair %}
                 <td data-toggle="modal" data-target="#myModal" class="content">
-                    {{coursename}}
+                    {{affairname}}
                 </td>
             {% endfor %}
             </tr>
@@ -147,7 +136,7 @@
             </div>
             <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-dismiss="modal">关闭</button>
-            <button type="button" class="btn btn-primary" onclick="clearText()" data-dismiss="modal" id="dismiss">确认</button>
+            <button type="button" class="btn btn-primary" onclick="addAffair()" id="add">确认</button>
             </div>
         </div>
         </div>
@@ -161,7 +150,7 @@
         var changing_i, changing_j; //用于读取更改安排的格子坐标
         var name = "";
         var stuid = "";
-        var mode = "affair";
+        var groupid = "";
         weekday = 0;
         daytime = 0;
         // 初始化用户
@@ -174,6 +163,9 @@
         else{
             // 检测不到学号，跳转到登录界面
             window.location.href = "/";
+        }
+        if(localStorage["groupid"]){
+            groupid = localStorage["groupid"]
         }
         if(name.length > 0){
             document.getElementById("usertitle").innerHTML="你好," + name;
@@ -196,47 +188,28 @@
             }
         })
 
-        logout = function(){
-            localStorage["secret"] = "";
-            var j;
-            var loginAdr = "";
-            var nowAdr = window.location.href;
-            for(var i = 0; nowAdr[i] != "i"; i++){
-                loginAdr += window.location.href[i];
-            }
-            window.location.href = loginAdr;
-        }
-
-        mode2affair = function(){
-            $("#modenow").text("事务模式");
-            mode = "affair";
-        }
-
-        mode2course = function(){
-            $("#modenow").text("课程模式");
-            mode = "course";
-        }
-
         switch2me = function(){
+            console.log(456);
             urlnow = window.location.href;
             urlnext = "";
             for(var i = 0; urlnow[i] != "g"; i++){
                 urlnext += urlnow[i];
             }
-            window.location.href = urlnext + "index/";
+            window.location.href = urlnext + "index/?stuid=" + stuid;
         }
 
         // 向服务器发送新的事务
-        clearText = function(){
+        addAffair = function(){
             var mydata = {
-                "stuid":"17307130109",
-                "name":"zqy",
+                "stuid":stuid,
+                "groupid":groupid,
                 "weeknum":app.$data.weekcount,
                 "weekday":weekday,
-                "daytime":daytime
+                "daytime":daytime,
+                "affair":document.getElementById("nextplan").value,
+                "op":"add"
             }
-            mydata[mode] = document.getElementById("nextplan").value;
-            url2send = "/add/" + mode + "/";
+            url2send = "/group/affair/change";
             $.ajax({
                 type:"POST",
                 dataType:"json",
@@ -244,14 +217,13 @@
                 contentType:"application/json",
                 data:JSON.stringify(mydata),
                 success:function(result){
+                    console.log(result);
                     if(result["status"] == "success"){
-                        document.getElementsByClassName("content")[(daytime - 1) * 7 + weekday - 1].innerHTML = result[mode];
-                        if(mode == "course"){
-                            location.reload();
-                        }
+                        document.getElementsByClassName("content")[(daytime - 1) * 7 + weekday - 1].innerHTML = mydata["affair"];
+                        $("#myModal").modal("hide");
                     }
                     else{
-                        document.getElementsByClassName("content")[(daytime - 1) * 7 + weekday - 1].innerHTML = result["reason"] + ",添加失败";
+                        document.getElementsByClassName("content")[(daytime - 1) * 7 + weekday - 1].innerHTML = result["reason"] + ",操作失败";
                     }
                 }
             });
@@ -261,7 +233,7 @@
         // 按下回车后保存修改信息
         function onKey(event){
             if(event.keyCode == "13"){
-                document.getElementById("dismiss").click();
+                document.getElementById("add").click();
             }
         }
 
@@ -337,7 +309,7 @@
                 "stuid":stuid,
                 "currweek":weeklocal
             }
-            $.ajax({
+            {% comment %} $.ajax({
                 type:"POST",
                 url:"/get/affair",
                 dataType:"json",
@@ -363,7 +335,7 @@
                         }
                     }
                 }
-            })
+            }) {% endcomment %}
         }
         changeweek(0);
 

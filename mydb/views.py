@@ -156,7 +156,7 @@ class Group(View):
         data = request.body
         jdata = json.loads(data)
         reslist = GroupModel.show_groups(jdata)
-        return HttpResponse(reslist)
+        return HttpResponse(json.dumps({"data":reslist}))
 
     def destroy_group(request):
         data = request.body
@@ -166,6 +166,23 @@ class Group(View):
             return HttpResponse(fail(reason))
         return HttpResponse(success(reason))
 
+    def search_group(request):
+        data = request.body
+        jdata = json.loads(data)
+        hisgroups = GroupModel.search_group(jdata)
+        res = []
+        for group in hisgroups:
+            gdata = {
+                "groupid":group.groupid,
+                "groupname":group.groupname
+            }
+            res.append(gdata)
+        status = {
+            "len":len(res),
+            "data":res
+        }
+        return HttpResponse(success(status))
+
 class GroupAffair(View):
     def change_group_affair(request):
         data = request.body
@@ -174,3 +191,10 @@ class GroupAffair(View):
         if not status:
             return HttpResponse(fail(reason))
         return HttpResponse(success(reason))
+
+    def table_get_affair(gid, wknum):
+        affairs = GroupAffairModel.objects(groupid = gid, weeknum = wknum)
+        data = table_construct(14, 7)
+        for affair in affairs:
+            data[affair.daytime - 1][affair.weekday - 1] = affair.affairname
+        return data

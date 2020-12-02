@@ -215,6 +215,11 @@ class GroupModel(mongoengine.Document):
             item.save()
         return {"reason":"摧毁成功"}, True
 
+    def search_group(jdata):
+        searchid = jdata["leaderid"]
+        groups = GroupModel.objects(leader = searchid, destroy = 0, stuid = searchid)
+        return groups
+
 class GroupAffairModel(mongoengine.Document):
     groupid = mongoengine.StringField() # 小组编号
     affairname = mongoengine.StringField(max_length=20) # 事务名称
