@@ -38,4 +38,5 @@ urlpatterns = [
     url(r'^group/destroy$', Group.destroy_group), #组长解散自己的小组
     url(r'^group/affair/change$', GroupAffair.change_group_affair), #组长添加、删除小组事务
     url(r'^group/search$', Group.search_group), #根据组长学号查找小组
+    url(r'^group/list$', GroupAffair.table_get_affair), #返回小组的所有事务
 ]

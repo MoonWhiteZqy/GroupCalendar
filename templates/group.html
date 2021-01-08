@@ -15,8 +15,6 @@
     <script src="/static/bootstrap.min.js"></script>
     
 
-    <!-- Vue -->
-    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script>
 
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="/static/bootstrap.min.css">
@@ -68,7 +66,6 @@
 
 
     <!-- 表格内容 -->
-    <div id = "app">    
     <table class="table table-bordered">
         <thead class="thead-dark">
             <!-- 显示时间的表格 -->
@@ -81,11 +78,12 @@
 
         </thead>
 
+        <!-- 构造日程表的表格 -->
         {%for classes, affair in affairs.items%}
             <tr>
             <td>{{classes}}</td>
             {% for affairname in affair %}
-                <td data-toggle="modal" data-target="#myModal" class="content">
+                <td class="content">
                     {{affairname}}
                 </td>
             {% endfor %}
@@ -101,14 +99,13 @@
           <li class="page-item" id="prevli">
             <a class="page-link" href="#" id="preva" onclick="changeweek(-1)">上一周</a>
           </li>
-          <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">第{% verbatim myblock %}{{weekcount}}{% endverbatim myblock %}周</a></li>
+          <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true" id="weektag">加载中</a></li>
           <li class="page-item" id="nextli">
             <a class="page-link" href="#" id="nexta" onclick="changeweek(1)">下一周</a>
           </li>
         </ul>
     </nav>
 
-    </div>
 
     <!-- 弹出框体 -->
     <!-- Modal -->
@@ -144,6 +141,7 @@
         var name = "";
         var stuid = "";
         var groupid = "";
+        var weeknum = 0;
         weekday = 0;
         daytime = 0;
         // 初始化用户
@@ -163,32 +161,10 @@
         if(name.length > 0){
             document.getElementById("usertitle").innerHTML="你好," + name;
         }
-        var app = new Vue({
-            el:"#app",
-            data:{
-                weekcount:0
-            },
-            methods:{
-                changeText:function(event, i, j){
-                    changing_td = event.currentTarget;
-                    var mymodaltitle = document.getElementById("ModalLabel");
-                    var nextp = document.getElementById("nextplan");
-                    nextp.value = changing_td.innerHTML;
-                    changing_i = i;
-                    changing_j = j;
-                    mymodaltitle.innerHTML = "周" + (j + 1).toString() + ",第" + (i + 1).toString() + "节课";
-                }
-            }
-        })
 
         switch2me = function(){
-            console.log(456);
-            urlnow = window.location.href;
-            urlnext = "";
-            for(var i = 0; urlnow[i] != "g"; i++){
-                urlnext += urlnow[i];
-            }
-            window.location.href = urlnext + "index/?stuid=" + stuid;
+            localStorage["groupid"] = "";
+            window.location.href = "/index/?stuid=" + stuid;
         }
 
         // 向服务器发送新的事务
@@ -196,7 +172,7 @@
             var mydata = {
                 "stuid":stuid,
                 "groupid":groupid,
-                "weeknum":app.$data.weekcount,
+                "weeknum":weeknum,
                 "weekday":weekday,
                 "daytime":daytime,
                 "affair":document.getElementById("nextplan").value,
@@ -235,14 +211,18 @@
         var cts = document.getElementsByClassName("content");
         for(var i = 0; i < cts.length; i++){
             cts[i].index = i;
+            cts[i].occupied = false;
             cts[i].onclick = function(){
-                var rindex = this.index;
-                x = Math.floor(this.index / 7) + 1;
-                y = this.index % 7 + 1;
-                document.getElementById("ModalLabel").innerHTML = "星期" + y + "第" + x + "节课";
-                document.getElementById("nextplan").value = cts[rindex].innerHTML;
-                weekday = y;
-                daytime = x;
+                if(!this.occupied){
+                    var rindex = this.index;
+                    x = Math.floor(this.index / 7) + 1;
+                    y = this.index % 7 + 1;
+                    document.getElementById("ModalLabel").innerHTML = "星期" + y + "第" + x + "节课";
+                    document.getElementById("nextplan").value = cts[rindex].innerHTML;
+                    weekday = y;
+                    daytime = x;
+                    $("#myModal").modal("show");
+                }
             }
         }
 
@@ -267,7 +247,7 @@
                 stamp[i].innerHTML = today + " " + daynames[i];
             }
             var weekc = Math.floor((date - beginday) / (7 * 24 * 3600000)); //定义当前所处的星期
-            app.$set(app.$data, 'weekcount', weekc);
+            weeknum = weekc;
         }
         setday(date);
 
@@ -275,16 +255,14 @@
         var changeweek = function(weekindex){
             var nextday = new Date(date.getTime() + 86400000 * 7 * weekindex);
             date = nextday;
-            setday(date);
-            var currweek = app.$data.weekcount;
-            weeklocal = currweek;
+            var currweek = weeknum + weekindex;
             if(currweek == 1){ //禁用上一周
                 document.getElementById("preva").setAttribute("aria:disabled", true);
                 document.getElementById("prevli").setAttribute("class", "page-item disabled");
                 document.getElementById("preva").setAttribute("tabindex", -1);
                 document.getElementById("preva").blur();
             }
-            else if(currweek == 16){ //禁用下一周
+            else if(currweek == 18){ //禁用下一周
                 document.getElementById("nexta").setAttribute("aria:disabled", true);
                 document.getElementById("nextli").setAttribute("class", "page-item disabled");
                 document.getElementById("nexta").setAttribute("tabindex", -1);
@@ -299,36 +277,33 @@
                 document.getElementById("nexta").setAttribute("tabindex", 0);
             }
             var get_week_data = {
-                "stuid":stuid,
-                "currweek":weeklocal
-            }
-            {% comment %} $.ajax({
+                "groupid":groupid,
+                "weeknum":weeknum + weekindex
+            };
+            $.ajax({
                 type:"POST",
-                url:"/get/affair",
+                url:"/group/list",
                 dataType:"json",
                 contentType:"application/json",
                 data:JSON.stringify(get_week_data),
                 success:function(result){
-                    var resaffair = result["data"];
-                    var exist_course = {{courses|safe}};
-                    var courses = new Array;
-                    for(key in exist_course){
-                        courses = courses.concat(exist_course[key]); 
-                    }
+                    console.log(result);
+                    let individual_affair = result["individual"];
+                    let group_affair = result["group"];
                     var tables = document.getElementsByClassName("content");
-                    for(var i = 0; i < tables.length; i++){
-                        tables[i].innerHTML = courses[i];
-                    }
-                    if(result["status"] == "success"){
-                        for(var i = 0; i < resaffair.length; i++){
-                            var data = resaffair[i];
-                            var x = data["daytime"] - 1;
-                            var y = data["weekday"] - 1;
-                            tables[x * 7 + y].innerHTML = courses[x * 7 + y] + data["affair"];
+                    for(var i = 0; i < individual_affair.length; i++){
+                        for(var j = 0; j < 7; j++){
+                            let table_now = tables[i * 7 + j];
+                            $(table_now).text(individual_affair[i][j]);
+                            if(individual_affair[i][j].length > 0){
+                                table_now.occupied = true;
+                            }
                         }
                     }
+                    setday(date);
+                    $("#weektag").text("第" + weeknum + "周");
                 }
-            }) {% endcomment %}
+            })
         }
         changeweek(0);
 

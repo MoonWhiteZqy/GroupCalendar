@@ -192,9 +192,23 @@ class GroupAffair(View):
             return HttpResponse(fail(reason))
         return HttpResponse(success(reason))
 
-    def table_get_affair(gid, wknum):
+    def table_get_affair(request):
+        jdata = json.loads(request.body)
+        gid = jdata["groupid"]
+        wknum = jdata["weeknum"]
         affairs = GroupAffairModel.objects(groupid = gid, weeknum = wknum)
-        data = table_construct(14, 7)
+        individuals = GroupModel.objects(groupid = gid)
+        group_data = table_construct(14, 7)
+        individual_data = table_construct(14, 7)
         for affair in affairs:
-            data[affair.daytime - 1][affair.weekday - 1] = affair.affairname
-        return data
+            group_data[affair.daytime - 1][affair.weekday - 1] = affair.affairname
+        for individual in individuals:
+            student = individual.stuid
+            stu_affair = AffairModel.objects(stuid = student, weeknum = wknum)
+            for single_affair in stu_affair:
+                individual_data[single_affair.daytime - 1][single_affair.weekday - 1] = single_affair.name
+        data = {
+            'group':group_data,
+            'individual':individual_data
+        }
+        return HttpResponse(success(data))

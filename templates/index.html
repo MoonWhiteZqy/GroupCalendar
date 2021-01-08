@@ -18,9 +18,6 @@
     <link rel="stylesheet" href="/static/bootstrap-table.min.css">
     <script src="/static/bootstrap-table.min.js"></script>
 
-    <!-- Vue -->
-    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script>
-
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="/static/bootstrap.min.css">
 
@@ -104,7 +101,6 @@
 
 
     <!-- 表格内容 -->
-    <div id = "app">    
     <table class="table table-bordered">
         <thead class="thead-dark">
             <!-- 显示时间的表格 -->
@@ -137,7 +133,7 @@
           <li class="page-item" id="prevli">
             <a class="page-link" href="#" id="preva" onclick="changeweek(-1)">上一周</a>
           </li>
-          <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">第{% verbatim myblock %}{{weekcount}}{% endverbatim myblock %}周</a></li>
+          <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true" id="weektag">第0周</a></li>
           <li class="page-item" id="nextli">
             <a class="page-link" href="#" id="nexta" onclick="changeweek(1)">下一周</a>
           </li>
@@ -180,6 +176,7 @@
         var name = "";
         var stuid = "";
         var mode = "affair";
+        var weeknum = 0;
         weekday = 0;
         daytime = 0;
         // 初始化用户
@@ -196,23 +193,6 @@
         if(name.length > 0){
             document.getElementById("usertitle").innerHTML="你好," + name;
         }
-        var app = new Vue({
-            el:"#app",
-            data:{
-                weekcount:0
-            },
-            methods:{
-                changeText:function(event, i, j){
-                    changing_td = event.currentTarget;
-                    var mymodaltitle = document.getElementById("ModalLabel");
-                    var nextp = document.getElementById("nextplan");
-                    nextp.value = changing_td.innerHTML;
-                    changing_i = i;
-                    changing_j = j;
-                    mymodaltitle.innerHTML = "周" + (j + 1).toString() + ",第" + (i + 1).toString() + "节课";
-                }
-            }
-        })
 
         function addTableButton(value, row, index){
             return [
@@ -277,28 +257,35 @@
                 });
             },            
             'click #disb_g' :function(e, value, row, index){
-                mydata = {
-                    "stuid":stuid,
-                    "groupid":row["groupid"]
-                };
-                $.ajax({
-                    type:"POST",
-                    dataType:"json",
-                    url:"/group/destroy",
-                    contentType:"application/json",
-                    data:JSON.stringify(mydata),
-                    success:function(result){
-                        if(result["status"] == "success"){
-                            $("#staticBackdropLabel").text("小组解散成功");
+                if(!row["permission"]){
+                    $("#staticBackdropLabel").text("你没有这个权限");
+                    $(e.currentTarget).attr("disabled", true);
+                }
+                else{
+                    mydata = {
+                        "stuid":stuid,
+                        "groupid":row["groupid"]
+                    };
+                    $.ajax({
+                        type:"POST",
+                        dataType:"json",
+                        url:"/group/destroy",
+                        contentType:"application/json",
+                        data:JSON.stringify(mydata),
+                        success:function(result){
+                            if(result["status"] == "success"){
+                                $("#staticBackdropLabel").text("小组解散成功");
+                            }
+                            else{
+                                $("#staticBackdropLabel").text(result["reason"]);
+                            }
+                            $(e.currentTarget).attr("disabled", true);
                         }
-                        else{
-                            $("#staticBackdropLabel").text(result["reason"]);
-                        }
-                        $(e.currentTarget).attr("disabled", true);
-                    }
-                });
+                    });
+                }
             },
             'click #enter_g' :function(e, value, row, index){
+                localStorage["groupid"] = row["groupid"];
                 window.location.href = '/group/?groupid=' + row["groupid"];
             }
         }
@@ -338,7 +325,7 @@
             var mydata = {
                 "stuid":stuid,
                 "name":name,
-                "weeknum":app.$data.weekcount,
+                "weeknum":weeknum,
                 "weekday":weekday,
                 "daytime":daytime
             }
@@ -522,7 +509,7 @@
                 stamp[i].innerHTML = today + " " + daynames[i];
             }
             var weekc = Math.floor((date - beginday) / (7 * 24 * 3600000)); //定义当前所处的星期
-            app.$set(app.$data, 'weekcount', weekc);
+            weeknum = weekc;
         }
         setday(date);
 
@@ -530,16 +517,14 @@
         var changeweek = function(weekindex){
             var nextday = new Date(date.getTime() + 86400000 * 7 * weekindex);
             date = nextday;
-            setday(date);
-            var currweek = app.$data.weekcount;
-            weeklocal = currweek;
+            var currweek = weeknum;
             if(currweek == 1){ //禁用上一周
                 document.getElementById("preva").setAttribute("aria:disabled", true);
                 document.getElementById("prevli").setAttribute("class", "page-item disabled");
                 document.getElementById("preva").setAttribute("tabindex", -1);
                 document.getElementById("preva").blur();
             }
-            else if(currweek == 16){ //禁用下一周
+            else if(currweek == 18){ //禁用下一周
                 document.getElementById("nexta").setAttribute("aria:disabled", true);
                 document.getElementById("nextli").setAttribute("class", "page-item disabled");
                 document.getElementById("nexta").setAttribute("tabindex", -1);
@@ -555,7 +540,7 @@
             }
             var get_week_data = {
                 "stuid":stuid,
-                "currweek":weeklocal
+                "currweek":weeknum + weekindex
             }
             $.ajax({
                 type:"POST",
@@ -582,10 +567,13 @@
                             tables[x * 7 + y].innerHTML = courses[x * 7 + y] + data["affair"];
                         }
                     }
+                    setday(date);
+                    $("#weektag").text("第" + weeknum + "周");
                 }
             })
         }
         changeweek(0);
+        $("#weektag").text("第" + weeknum + "周");
 
 
 

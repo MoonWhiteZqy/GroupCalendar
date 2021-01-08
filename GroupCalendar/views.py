@@ -44,8 +44,6 @@ def login(request):
 def group(request):
     context = {}
     groupid = request.GET.get("groupid")
-    weeknum = request.GET.get("weeknum")
-    affairs = GroupAffair.table_get_affair(groupid, weeknum)
     context['weekdaynames'] = [
         "星期一",
         "星期二",
@@ -73,5 +71,5 @@ def group(request):
     ]
     context['affairs'] = {}
     for i in range(14):
-        context['affairs'][classes[i]] = affairs[i]
+        context['affairs'][classes[i]] = ["" for j in range(7)]
     return render(request, 'group.html', context)
