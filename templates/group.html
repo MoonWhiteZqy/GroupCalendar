@@ -228,7 +228,8 @@
 
 
         Date.prototype.toDayString = function(){
-            return this.getFullYear() + '年' + (this.getMonth() + 1).toString() + '月' + this.getDate() + '日';
+            {% comment %} return this.getFullYear() + '年' + (this.getMonth() + 1).toString() + '月' + this.getDate() + '日'; {% endcomment %}
+            return (this.getMonth() + 1).toString() + '月' + this.getDate() + '日';
         }
 
         var date = new Date();

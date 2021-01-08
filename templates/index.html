@@ -53,9 +53,6 @@
             <li class="nav-item active">
               <a class="nav-link" href="#">我的安排 <span class="sr-only">(current)</span></a>
             </li>
-            <li class="nav-item">
-              <a class="nav-link" href="#" onclick="switch2group()">团队安排</a>
-            </li>
             <li class="nav-item dropdown">
               <a class="nav-link dropdown-toggle" href="#" id="modenow" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 事务模式
@@ -69,7 +66,7 @@
             </li>
           </ul>
           <div class="form-inline my-2 my-lg-0">
-            <input class="form-control mr-sm-2" placeholder="通过组长学号查找" aria-label="Search" id="leaderinp">
+            <input class="form-control mr-sm-2" placeholder="输入组长学号" aria-label="Search" id="leaderinp">
             <button class="btn btn-outline-success my-2 my-sm-0" onclick="search_group()">查找</button>
             <button class="btn btn-outline-success my-2 my-sm-0" onclick="show_group()">我的</button>
             <button class="btn btn-outline-success my-2 my-sm-0" onclick="logout()">退出</button>
@@ -311,15 +308,6 @@
             mode = "course";
         }
 
-        switch2group = function(){
-            urlnow = window.location.href;
-            urlnext = "";
-            for(var i = 0; urlnow[i] != "i"; i++){
-                urlnext += urlnow[i];
-            }
-            window.location.href = urlnext + "group/";
-        }
-
         // 向服务器发送新的事务
         clearText = function(){
             var mydata = {
@@ -490,7 +478,8 @@
 
 
         Date.prototype.toDayString = function(){
-            return this.getFullYear() + '年' + (this.getMonth() + 1).toString() + '月' + this.getDate() + '日';
+            {% comment %} return this.getFullYear() + '年' + (this.getMonth() + 1).toString() + '月' + this.getDate() + '日'; {% endcomment %}
+            return (this.getMonth() + 1).toString() + '月' + this.getDate() + '日';
         }
 
         var date = new Date();
