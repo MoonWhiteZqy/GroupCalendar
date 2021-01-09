@@ -112,17 +112,26 @@ class AffairModel(mongoengine.Document):
         if weekcount > 18:
             return {"reason":"星期错误"}, False
         
-        find_obj = AffairModel.objects(stuid = stuid2add, name = name2add, weekday = week2add, daytime = day2add, weeknum = weekcount).first()
-        if not find_obj:
+        find_obj = AffairModel.objects(stuid = stuid2add, name = name2add, weekday = week2add, daytime = day2add, weeknum = weekcount).first() #看原本是否存在事务
+        if not find_obj: #原本不存在事务，则创建
             affair = AffairModel(stuid = stuid2add, name = name2add, affairname = affair2add, weekday = week2add, daytime = day2add, weeknum = weekcount)
             affair.save()
-        else:
+        else: #存在事务，则覆盖或删除
             find_obj.affairname = affair2add
             if len(affair2add) == 0:
                 find_obj.delete()
             else:
                 find_obj.save()
 
+        return {"reason":"success"}, True
+
+    def delete_all(jdata):
+        stuid2del = jdata['stuid']
+        week2del = jdata['weekday']
+        day2del = jdata['daytime']
+        find_obj = AffairModel.objects(stuid = stuid2del, weekday = week2del, daytime = day2del)
+        for obj in find_obj:
+            obj.delete()
         return {"reason":"success"}, True
 
 class GroupModel(mongoengine.Document):
@@ -137,6 +146,9 @@ class GroupModel(mongoengine.Document):
         stuid2add = jdata["stuid"]
         if not StudentModel.student_exist(stuid2add):
             return {"reason":"学生信息不存在"}, False
+        owned_group = GroupModel.objects(leader = stuid2add, stuid = stuid2add, destroy = 0)
+        if len(owned_group) > 2:
+            return {"reason":"你创建的小组太多了！先解散"}, False
         if not gname2add:
             return {"reason":"小组名字不能为空"}, False
         elif len(gname2add) > 20:
@@ -237,7 +249,7 @@ class GroupAffairModel(mongoengine.Document):
         daytime2add = jdata["daytime"]
         check_leader = GroupModel.objects(leader = stuid, groupid = gid2add, destroy = 0).first()
         if not check_leader:
-            return {"reason":"不存在该小组-组长对"}, False
+            return {"reason":"不是组长或者已经解散"}, False
         old_affair = GroupAffairModel.objects(groupid = gid2add, weeknum = weeknum2add, weekday = weekday2add, daytime = daytime2add).first()
         if old_affair:
             if jdata["op"] == "add":

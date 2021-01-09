@@ -29,6 +29,7 @@ urlpatterns = [
     url(r'^add/student/$', Student.add), #添加学生
     url(r'^login/$', Student.login), #用户登录
     url(r'^add/affair/$', Affair.set_affair), #添加事务
+    url(r'^delete/affair/$', Affair.delete_affair), #清空当前位置事务
     url(r'^get/affair$', Affair.get_affair), #获取事务
     url(r'^group/join$', Group.join_group), #加入小组
     url(r'^group/create$', Group.create_group), #创建小组

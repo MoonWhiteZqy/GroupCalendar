@@ -104,6 +104,20 @@ class Affair(View):
         id = jdata["stuid"]
         week = jdata["currweek"]
         affairs = AffairModel.objects(stuid = id, weeknum = week)
+        groups = GroupModel.objects(stuid = id, destroy = 0)
+        ginfos = [] # 记录当前用户所在小组的事务
+        for group in groups:
+            gid = group.groupid
+            group_affairs = GroupAffairModel.objects(groupid = gid, weeknum = week)
+            for affair in group_affairs:
+                info = {
+                    'stuid':id,
+                    'weeknum':week,
+                    'weekday':affair.weekday,
+                    'daytime':affair.daytime,
+                    'affair':affair.affairname
+                }
+                ginfos.append(info)
         infos = []
         for affair in affairs:
             info = {
@@ -114,10 +128,17 @@ class Affair(View):
                 'affair':affair.affairname
             }
             infos.append(info)
-        
         if len(infos) == 0:
             return HttpResponse(fail({"reason":"No affairs"}))
-        return HttpResponse(success({"data":infos}))        
+        return HttpResponse(success({"data":infos, "gdata":ginfos}))
+        
+    def delete_affair(request):
+        data = request.body
+        jdata = json.loads(data)
+        reason, status = AffairModel.delete_all(jdata)
+        if not status:
+            return HttpResponse(fail(reason))
+        return HttpResponse(success(reason))
 
 class Group(View):
     def create_group(request):

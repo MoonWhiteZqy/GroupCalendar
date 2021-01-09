@@ -295,9 +295,12 @@
                     for(var i = 0; i < individual_affair.length; i++){
                         for(var j = 0; j < 7; j++){
                             let table_now = tables[i * 7 + j];
-                            $(table_now).text(individual_affair[i][j]);
+                            $(table_now).text(individual_affair[i][j] + group_affair[i][j]);
                             if(individual_affair[i][j].length > 0){
                                 table_now.occupied = true;
+                            }
+                            else{
+                                table_now.occupied = false;
                             }
                         }
                     }

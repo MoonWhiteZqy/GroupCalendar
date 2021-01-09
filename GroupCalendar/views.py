@@ -31,10 +31,11 @@ def index(request):
         "第十四节 21:10-24:00"
     ]
     context['courses'] = {}
-    courses = Course.table_get_course(stuid)
+    # courses = Course.table_get_course(stuid)
     # courses = Course.table_get_course('')
     for i in range(14):
-        context['courses'][classes[i]] = courses[i]
+        # context['courses'][classes[i]] = courses[i]
+        context['courses'][classes[i]] = ["" for j in range(7)]
     
     return render(request, 'index.html', context)
 

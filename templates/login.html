@@ -81,6 +81,10 @@
         "name":document.getElementById("regName").value,
         "secret":document.getElementById("regPassword").value
       }
+      if(data.name.length == 0){
+        $("#regLabel").text("用户名不能为空");
+        return ;
+      }
       $.ajax({
         type:"POST",
         dataType:"JSON",
@@ -122,7 +126,7 @@
         var mestitle = document.getElementById("htitle");
         if(xhr.readyState == 4 && xhr.status == 200){
           res = JSON.parse(xhr.responseText);
-          console.log(res);
+          $("#regLabel").text(res);
           if(res["status"] == "success"){
             localStorage["name"] = res["name"];
             window.location.href = "/index/?stuid=" + res["id"];

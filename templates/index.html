@@ -50,20 +50,6 @@
       
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
           <ul class="navbar-nav mr-auto">
-            <li class="nav-item active">
-              <a class="nav-link" href="#">我的安排 <span class="sr-only">(current)</span></a>
-            </li>
-            <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle" href="#" id="modenow" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                事务模式
-              </a>
-              <div class="dropdown-menu" aria-labelledby="modenow">
-                <a class="dropdown-item" href="#" onclick="mode2course()">课程模式</a>
-                <a class="dropdown-item" href="#" onclick="mode2affair()">事务模式</a>
-                <div class="dropdown-divider"></div>
-                <a class="dropdown-item" href="#">Something else here</a>
-              </div>
-            </li>
           </ul>
           <div class="form-inline my-2 my-lg-0">
             <input class="form-control mr-sm-2" placeholder="输入组长学号" aria-label="Search" id="leaderinp">
@@ -86,6 +72,11 @@
         <div class="modal-body">
             <table class="table" id="gtable">
             </table>
+        </div>
+        <div class="modal-body">
+            <p>创建一个小组:</p>
+            <input id="group_name">
+            <button onclick="create_group()" class="btn btn-primary">创建</button>
         </div>
         <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-dismiss="modal">关闭</button>
@@ -114,7 +105,7 @@
             <tr>
             <td>{{classes}}</td>
             {% for coursename in course %}
-                <td data-toggle="modal" data-target="#myModal" class="content tdcl">
+                <td class="content tdcl">
                     {{coursename}}
                 </td>
             {% endfor %}
@@ -164,6 +155,7 @@
                 <button type="button" class="btn btn-primary" onclick="singleAll()">单周</button>
                 <button type="button" class="btn btn-primary" onclick="doubleAll()">双周</button>
                 <button type="button" class="btn btn-primary" onclick="onlyHere()">当前</button>
+                <button type="button" class="btn btn-primary" onclick="destroyHere()">摧毁</button>
             </div>
             <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-dismiss="modal">关闭</button>
@@ -258,6 +250,7 @@
             }
         }
 
+        // 为“我的”按钮内弹框表格添加按钮
         function myaddTableButton(value, row, index){
             return [
             '<button id="exit_g" type="button" class="btn btn-primary">退出</button>',
@@ -323,6 +316,7 @@
             }
         }
 
+        // 退出按钮功能
         logout = function(){
             localStorage["secret"] = "";
             var j;
@@ -378,14 +372,51 @@
             }
         }
 
-        mode2affair = function(){
-            $("#modenow").text("事务模式");
-            mode = "affair";
+        destroyHere = function(){
+            let mydata = {
+                "stuid":stuid,
+                "weekday":weekday,
+                "daytime":daytime
+            };
+            $.ajax({
+                type:"POST",
+                dataType:"json",
+                url:"/delete/affair/",
+                contentType:"application/json",
+                data:JSON.stringify(mydata),
+                success:function(result){
+                    if(result["status"] == "success"){
+                        document.getElementsByClassName("content")[(daytime - 1) * 7 + weekday - 1].innerHTML = "";
+                    }
+                    else{
+                        
+                    }
+                }
+            });
         }
 
-        mode2course = function(){
-            $("#modenow").text("课程模式");
-            mode = "course";
+        create_group = function(){
+            let mydata = {
+                "groupname":document.getElementById("group_name").value,
+                "stuid":stuid
+            };
+            $.ajax({
+                type:"POST",
+                dataType:"json",
+                url:"/group/create",
+                contentType:"application/json",
+                data:JSON.stringify(mydata),
+                success:function(result){
+                    console.log(mydata["groupname"]);
+                    if(result["status"] == "success"){
+                        $("#staticBackdropLabel").text("创建成功，正在刷新界面");
+                        location.reload();
+                    }
+                    else{
+                        $("#staticBackdropLabel").text(result["reason"]);
+                    }
+                }
+            });
         }
 
         // 向服务器发送新的事务
@@ -399,24 +430,29 @@
             }
             mydata[mode] = document.getElementById("nextplan").value;
             url2send = "/add/" + mode + "/";
-            $.ajax({
-                type:"POST",
-                dataType:"json",
-                url:url2send,
-                contentType:"application/json",
-                data:JSON.stringify(mydata),
-                success:function(result){
-                    if(result["status"] == "success"){
-                        document.getElementsByClassName("content")[(daytime - 1) * 7 + weekday - 1].innerHTML = result[mode];
-                        if(mode == "course"){
-                            location.reload();
-                        }
-                    }
-                    else{
-                        document.getElementsByClassName("content")[(daytime - 1) * 7 + weekday - 1].innerHTML = result["reason"] + ",添加失败";
-                    }
+            for(let i = 0; i < 18; i++){
+                if(boxes[i].checked == false){
+                    continue;
                 }
-            });
+                else{
+                    mydata["weeknum"] = i + 1;
+                    $.ajax({
+                        type:"POST",
+                        dataType:"json",
+                        url:url2send,
+                        contentType:"application/json",
+                        data:JSON.stringify(mydata),
+                        success:function(result){
+                            if(result["status"] == "success"){
+                                document.getElementsByClassName("content")[(daytime - 1) * 7 + weekday - 1].innerHTML = result[mode];
+                            }
+                            else{
+                                document.getElementsByClassName("content")[(daytime - 1) * 7 + weekday - 1].innerHTML = result["reason"] + ",添加失败";
+                            }
+                        }
+                    });
+                }
+            }
         }
 
         search_group = function(){
@@ -545,14 +581,18 @@
         var cts = document.getElementsByClassName("content");
         for(var i = 0; i < cts.length; i++){
             cts[i].index = i;
+            cts[i].occupied = false;
             cts[i].onclick = function(){
-                var rindex = this.index;
-                x = Math.floor(this.index / 7) + 1;
-                y = this.index % 7 + 1;
-                document.getElementById("ModalLabel").innerHTML = "星期" + y + "第" + x + "节课";
-                document.getElementById("nextplan").value = cts[rindex].innerHTML;
-                weekday = y;
-                daytime = x;
+                if(!this.occupied){
+                    var rindex = this.index;
+                    x = Math.floor(this.index / 7) + 1;
+                    y = this.index % 7 + 1;
+                    document.getElementById("ModalLabel").innerHTML = "星期" + y + "第" + x + "节课";
+                    document.getElementById("nextplan").value = cts[rindex].innerHTML;
+                    weekday = y;
+                    daytime = x;
+                    $("#myModal").modal("show");
+                }
             }
         }
 
@@ -586,7 +626,7 @@
         var changeweek = function(weekindex){
             var nextday = new Date(date.getTime() + 86400000 * 7 * weekindex);
             date = nextday;
-            var currweek = weeknum;
+            var currweek = weeknum + weekindex;
             if(currweek == 1){ //禁用上一周
                 document.getElementById("preva").setAttribute("aria:disabled", true);
                 document.getElementById("prevli").setAttribute("class", "page-item disabled");
@@ -611,6 +651,7 @@
                 "stuid":stuid,
                 "currweek":weeknum + weekindex
             }
+            $("#weektag").text("加载中");
             $.ajax({
                 type:"POST",
                 url:"/get/affair",
@@ -618,22 +659,32 @@
                 contentType:"application/json",
                 data:JSON.stringify(get_week_data),
                 success:function(result){
-                    var resaffair = result["data"];
+                    var resaffair = result["data"]; // 个人事务
+                    let groupaffair = result["gdata"]; // 小组事务
                     var exist_course = {{courses|safe}};
                     var courses = new Array;
                     for(key in exist_course){
                         courses = courses.concat(exist_course[key]); 
                     }
-                    var tables = document.getElementsByClassName("content");
-                    for(var i = 0; i < tables.length; i++){
-                        tables[i].innerHTML = courses[i];
+                    for(var i = 0; i < cts.length; i++){
+                        cts[i].innerHTML = courses[i];
                     }
                     if(result["status"] == "success"){
+                        for(let i = 0; i < cts.length; i++){
+                            cts[i].occupied = false;
+                        }
                         for(var i = 0; i < resaffair.length; i++){
                             var data = resaffair[i];
                             var x = data["daytime"] - 1;
                             var y = data["weekday"] - 1;
-                            tables[x * 7 + y].innerHTML = courses[x * 7 + y] + data["affair"];
+                            cts[x * 7 + y].innerHTML = courses[x * 7 + y] + data["affair"];
+                        }
+                        for(let i = 0; i < groupaffair.length; i++){
+                            let data = groupaffair[i];
+                            let x = data["daytime"] - 1;
+                            let y = data["weekday"] - 1;
+                            cts[x * 7 + y].innerHTML = courses[x * 7 + y] + data["affair"];
+                            cts[x * 7 + y].occupied = true;
                         }
                     }
                     setday(date);
@@ -643,6 +694,7 @@
         }
         changeweek(0);
         $("#weektag").text("第" + weeknum + "周");
+        boxes[weeknum - 1].checked = true;
 
 
 
