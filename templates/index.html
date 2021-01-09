@@ -154,7 +154,16 @@
             <!-- <form> -->
                 <label>有什么安排</label>
                 <input class="form-control" id="nextplan" onkeypress="return onKey(event)">
+                <br>
+                <label id="inPlace">选择在哪一周:</label>
             <!-- </form> -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" onclick="chooseAll()">全选</button>
+                <button type="button" class="btn btn-primary" onclick="reverseAll()">反选</button>
+                <button type="button" class="btn btn-primary" onclick="singleAll()">单周</button>
+                <button type="button" class="btn btn-primary" onclick="doubleAll()">双周</button>
+                <button type="button" class="btn btn-primary" onclick="onlyHere()">当前</button>
             </div>
             <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-dismiss="modal">关闭</button>
@@ -189,6 +198,33 @@
         }
         if(name.length > 0){
             document.getElementById("usertitle").innerHTML="你好," + name;
+        }
+
+        // 在添加事务时加入星期选项框，能够选择相应的星期
+        let boxes = new Array(0);
+        for(let i = 1; i <= 18; i++){
+            if(i == 1){
+                let mybr = document.createElement("br");
+                document.getElementById("inPlace").appendChild(mybr);
+            }
+            let weeklabel = document.createElement("label");
+            let weekchoice = document.createElement("input");
+            boxes.push(weekchoice);
+            let title = "0";
+            if(i > 9){
+                title = i;
+            }
+            else{
+                title += i;
+            }
+            weeklabel.innerHTML = title;
+            weekchoice.setAttribute("type", "checkbox");
+            document.getElementById("inPlace").appendChild(weeklabel);
+            document.getElementById("inPlace").appendChild(weekchoice);
+            if(i % 6 == 0){
+                let mybr = document.createElement("br");
+                document.getElementById("inPlace").appendChild(mybr);
+            }
         }
 
         function addTableButton(value, row, index){
@@ -296,6 +332,50 @@
                 loginAdr += window.location.href[i];
             }
             window.location.href = loginAdr;
+        }
+
+        // 选择所有的星期选项，即原本的课程
+        chooseAll = function(){
+            for(let i = 0; i < 18; i++){
+                boxes[i].checked = true;
+            }
+        }
+
+        // 反选所有星期选项
+        reverseAll = function(){
+            for(let i = 0; i < 18; i++){
+                boxes[i].checked = ! boxes[i].checked;
+            }
+        }
+
+        // 选择所有的单周选项
+        singleAll = function(){
+            for(let i = 0; i < 18; i++){
+                if(i % 2 == 0){
+                    boxes[i].checked = true;
+                }
+                else{
+                    boxes[i].checked = false;
+                }
+            }
+        }
+
+        // 选择所有的双周选项
+        doubleAll = function(){
+            singleAll();
+            reverseAll();
+        }
+
+        // 默认的星期选项，当前周，即事务
+        onlyHere = function(){
+            for(let i = 0; i < 18; i++){
+                if(i + 1 == weeknum){
+                    boxes[i].checked = true;
+                }
+                else{
+                    boxes[i].checked = false;
+                }
+            }
         }
 
         mode2affair = function(){
