@@ -591,6 +591,10 @@
                     document.getElementById("nextplan").value = cts[rindex].innerHTML;
                     weekday = y;
                     daytime = x;
+                    for(let i = 0; i < 18; i++){
+                        boxes[i].checked = false;
+                    }
+                    boxes[weeknum - 1].checked = true;
                     $("#myModal").modal("show");
                 }
             }
