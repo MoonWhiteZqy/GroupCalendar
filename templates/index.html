@@ -114,9 +114,11 @@
         
 
     </table>
-
     <!-- 切换当前所处星期的导航条 -->
     <nav aria-label="Page navigation example">
+    <span>注1:摧毁将删除表格所在位置,分布于不同星期的所有同名课程。</span>
+    <span>注2:课程可以通过输入空字符串覆盖进行删除,但是课程覆盖不会有提示。</span>
+    <span>注3:如果进行修改后没有体现，请刷新页面或者重新切换至当前星期。</span>
         <ul class="pagination justify-content-end">
           <li class="page-item" id="prevli">
             <a class="page-link" href="#" id="preva" onclick="changeweek(-1)">上一周</a>
@@ -127,6 +129,15 @@
           </li>
         </ul>
     </nav>
+    <span>导入课程:</span>
+    {%for default_course in default_courses%}
+    <!--<button class="btn btn-outline-primary defaultCourseBtn" onclick="addDefaultCourse({{forloop.counter0}})">{{default_course}}</button>    单独选择课程，废弃 -->
+    <input class="defaultCourseSelectBox" type="checkbox" value="{{default_course}}">{{default_course}}</input>
+    {%endfor%}
+    <button class="btn btn-outline-primary" onclick="sendDefaultCourses()">确认选课</button>
+    <br>
+    <span>注4:导入课程后，请手动刷新页面。</span>
+
 
     </div>
 
@@ -155,7 +166,7 @@
                 <button type="button" class="btn btn-primary" onclick="singleAll()">单周</button>
                 <button type="button" class="btn btn-primary" onclick="doubleAll()">双周</button>
                 <button type="button" class="btn btn-primary" onclick="onlyHere()">当前</button>
-                <button type="button" class="btn btn-primary" onclick="destroyHere()">摧毁</button>
+                <button type="button" class="btn btn-primary" onclick="destroyHere()" data-dismiss="modal">摧毁</button>
             </div>
             <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-dismiss="modal">关闭</button>
@@ -175,6 +186,8 @@
         var stuid = "";
         var mode = "affair";
         var weeknum = 0;
+	var defaultCoursesName = ["工程伦理", "研究生综合英语", "算法设计与分析", "高级软件工程", "软件体系结构", 
+            "高级网络技术", "数据仓库与数据挖掘", "人工智能", "区块链技术", "C++面向对象技术", "深度学习实践"]
         weekday = 0;
         daytime = 0;
         // 初始化用户
@@ -194,7 +207,7 @@
 
         // 在添加事务时加入星期选项框，能够选择相应的星期
         let boxes = new Array(0);
-        for(let i = 1; i <= 18; i++){
+        for(let i = 1; i <= 20; i++){
             if(i == 1){
                 let mybr = document.createElement("br");
                 document.getElementById("inPlace").appendChild(mybr);
@@ -213,11 +226,21 @@
             weekchoice.setAttribute("type", "checkbox");
             document.getElementById("inPlace").appendChild(weeklabel);
             document.getElementById("inPlace").appendChild(weekchoice);
-            if(i % 6 == 0){
+            if(i % 5 == 0){
                 let mybr = document.createElement("br");
                 document.getElementById("inPlace").appendChild(mybr);
             }
         }
+
+
+	sendDefaultCourses = function() {
+		defaultBoxes = document.getElementsByClassName("defaultCourseSelectBox");
+		for(i = 0; i < defaultBoxes.length; i++) {
+			if(defaultBoxes[i].checked)
+				addDefaultCourse(defaultBoxes[i].value);
+		}
+	}
+
 
         function addTableButton(value, row, index){
             return [
@@ -330,21 +353,21 @@
 
         // 选择所有的星期选项，即原本的课程
         chooseAll = function(){
-            for(let i = 0; i < 18; i++){
+            for(let i = 0; i < boxes.length; i++){
                 boxes[i].checked = true;
             }
         }
 
         // 反选所有星期选项
         reverseAll = function(){
-            for(let i = 0; i < 18; i++){
+            for(let i = 0; i < boxes.length; i++){
                 boxes[i].checked = ! boxes[i].checked;
             }
         }
 
         // 选择所有的单周选项
         singleAll = function(){
-            for(let i = 0; i < 18; i++){
+            for(let i = 0; i < boxes.length; i++){
                 if(i % 2 == 0){
                     boxes[i].checked = true;
                 }
@@ -362,7 +385,7 @@
 
         // 默认的星期选项，当前周，即事务
         onlyHere = function(){
-            for(let i = 0; i < 18; i++){
+            for(let i = 0; i < boxes.length; i++){
                 if(i + 1 == weeknum){
                     boxes[i].checked = true;
                 }
@@ -376,7 +399,8 @@
             let mydata = {
                 "stuid":stuid,
                 "weekday":weekday,
-                "daytime":daytime
+                "daytime":daytime,
+		"weeknum":weeknum
             };
             $.ajax({
                 type:"POST",
@@ -394,6 +418,28 @@
                 }
             });
         }
+
+	addDefaultCourse = function(course) {
+		let mydata = {
+			"stuid":stuid,
+			"default_course":course
+		};
+		$.ajax({
+		type:"POST",
+		dataType:"json",
+		url:"/default/affair/",
+		contentType:"application/json",
+		data:JSON.stringify(mydata),
+		success:function(result){
+		    console.log(result);
+		    if(result["status"] == "success"){
+		    }
+		    else{
+			
+		    }
+		}
+		});
+	}
 
         create_group = function(){
             let mydata = {
@@ -430,7 +476,7 @@
             }
             mydata[mode] = document.getElementById("nextplan").value;
             url2send = "/add/" + mode + "/";
-            for(let i = 0; i < 18; i++){
+            for(let i = 0; i < boxes.length; i++){
                 if(boxes[i].checked == false){
                     continue;
                 }
@@ -444,7 +490,9 @@
                         data:JSON.stringify(mydata),
                         success:function(result){
                             if(result["status"] == "success"){
-                                document.getElementsByClassName("content")[(daytime - 1) * 7 + weekday - 1].innerHTML = result[mode];
+				if(mydata["weeknum"] == weeknum) {
+                                	document.getElementsByClassName("content")[(daytime - 1) * 7 + weekday - 1].innerHTML = result[mode];
+				}
                             }
                             else{
                                 document.getElementsByClassName("content")[(daytime - 1) * 7 + weekday - 1].innerHTML = result["reason"] + ",添加失败";
@@ -591,7 +639,7 @@
                     document.getElementById("nextplan").value = cts[rindex].innerHTML;
                     weekday = y;
                     daytime = x;
-                    for(let i = 0; i < 18; i++){
+                    for(let i = 0; i < boxes.length; i++){
                         boxes[i].checked = false;
                     }
                     boxes[weeknum - 1].checked = true;
@@ -607,7 +655,7 @@
         }
 
         var date = new Date();
-        var beginday = new Date(1599408000000); //学期的开始，9月7日0时（第0周）
+        var beginday = new Date("2022-08-22 0:0:0"); //学期的开始，9月7日0时（第0周）
 
 
         // 设定当前所处时间
@@ -637,7 +685,7 @@
                 document.getElementById("preva").setAttribute("tabindex", -1);
                 document.getElementById("preva").blur();
             }
-            else if(currweek == 18){ //禁用下一周
+            else if(currweek == 20){ //禁用下一周
                 document.getElementById("nexta").setAttribute("aria:disabled", true);
                 document.getElementById("nextli").setAttribute("class", "page-item disabled");
                 document.getElementById("nexta").setAttribute("tabindex", -1);

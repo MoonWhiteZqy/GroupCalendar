@@ -15,7 +15,8 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from django.conf.urls import url
+#from django.conf.urls import url
+from django.urls import re_path as url
 from . import views
 from mydb.views import Course, Student, Affair, Group, GroupAffair
 
@@ -23,7 +24,7 @@ urlpatterns = [
     # path('admin/', admin.site.urls),
     url(r'^$', views.login), #登录页面
     url(r'^index/$', views.index), #课表页面
-    url(r'^group/$', views.group), #团队页面
+    #url(r'^group/$', views.group), #团队页面
     url(r'^add/course/$', Course.add_course), #添加课程
     url(r'^get/$', Course.get_course), #获取课程
     url(r'^add/student/$', Student.add), #添加学生
@@ -31,13 +32,14 @@ urlpatterns = [
     url(r'^add/affair/$', Affair.set_affair), #添加事务
     url(r'^delete/affair/$', Affair.delete_affair), #清空当前位置事务
     url(r'^get/affair$', Affair.get_affair), #获取事务
-    url(r'^group/join$', Group.join_group), #加入小组
-    url(r'^group/create$', Group.create_group), #创建小组
-    url(r'^group/leave$', Group.leave_group), #离开小组
+    url(r'^default/affair/$', Affair.default_affair), #添加预设事务
+    #url(r'^group/join$', Group.join_group), #加入小组
+    #url(r'^group/create$', Group.create_group), #创建小组
+    #url(r'^group/leave$', Group.leave_group), #离开小组
     # url(r'^group/change$', Group.change_leader), #更改组长
-    url(r'^group/show$', Group.show_group), #展示加入的小组
-    url(r'^group/destroy$', Group.destroy_group), #组长解散自己的小组
-    url(r'^group/affair/change$', GroupAffair.change_group_affair), #组长添加、删除小组事务
-    url(r'^group/search$', Group.search_group), #根据组长学号查找小组
-    url(r'^group/list$', GroupAffair.table_get_affair), #返回小组的所有事务
+    #url(r'^group/show$', Group.show_group), #展示加入的小组
+    #url(r'^group/destroy$', Group.destroy_group), #组长解散自己的小组
+    #url(r'^group/affair/change$', GroupAffair.change_group_affair), #组长添加、删除小组事务
+    #url(r'^group/search$', Group.search_group), #根据组长学号查找小组
+    #url(r'^group/list$', GroupAffair.table_get_affair), #返回小组的所有事务
 ]

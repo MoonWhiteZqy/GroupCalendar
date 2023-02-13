@@ -140,6 +140,88 @@ class Affair(View):
             return HttpResponse(fail(reason))
         return HttpResponse(success(reason))
 
+    def default_affair(request):
+        data = request.body
+        jdata = json.loads(data)
+        # 下午课程要+1， 晚上课程要+2
+        default_course = {
+                "工程伦理":[
+                    {"from":10, "to":19, "weekday":4, "up":7, "down":10}],
+                "研究生综合英语":[
+                    {"from":2, "to":2, "weekday":1, "up":1, "down":4},
+                    {"from":4, "to":5, "weekday":1, "up":1, "down":4},
+                    {"from":6, "to":6, "weekday":6, "up":1, "down":4},
+                    {"from":7, "to":12, "weekday":1, "up":1, "down":4},
+                    ],
+                "算法设计与分析":[
+                    {"from":2, "to":5, "weekday":2, "up":1, "down":2},
+                    #{"from":9, "to":11, "weekday":3, "up":11, "down":11},
+                    #{"from":13, "to":15, "weekday":3, "up":11, "down":11},
+                    #{"from":17, "to":17, "weekday":3, "up":11, "down":11},
+                    #{"from":19, "to":19, "weekday":3, "up":11, "down":11},
+                    {"from":2, "to":5, "weekday":4, "up":3, "down":5},
+                    {"from":7, "to":19, "weekday":4, "up":3, "down":5},
+                    ],
+                "高级软件工程":[
+                    {"from":9, "to":10, "weekday":3, "up":3, "down":5},
+                    {"from":2, "to":5, "weekday":5, "up":7, "down":9},
+                    {"from":6, "to":6, "weekday":7, "up":7, "down":9},
+                    {"from":7, "to":18, "weekday":5, "up":7, "down":9},
+                    ],
+                "软件体系结构":[
+                    {"from":2, "to":5, "weekday":2, "up":7, "down":9},
+                    {"from":7, "to":13, "weekday":2, "up":7, "down":9},
+                    #{"from":7, "to":14, "weekday":2, "up":11, "down":11},
+                    {"from":2, "to":5, "weekday":5, "up":1, "down":2},
+                    {"from":6, "to":6, "weekday":7, "up":1, "down":2},
+                    {"from":7, "to":13, "weekday":5, "up":1, "down":2},
+                    ],
+                "高级网络技术":[
+                    {"from":2, "to":5, "weekday":2, "up":3, "down":5},
+                    {"from":7, "to":18, "weekday":2, "up":3, "down":5},
+                    #{"from":13, "to":17, "weekday":5, "up":11, "down":11},
+                    ],
+                "数据仓库与数据挖掘":[
+                    {"from":2, "to":2, "weekday":1, "up":13, "down":14},
+                    {"from":4, "to":5, "weekday":1, "up":13, "down":14},
+                    {"from":6, "to":6, "weekday":6, "up":13, "down":14},
+                    {"from":7, "to":12, "weekday":1, "up":13, "down":14},
+                    {"from":2, "to":5, "weekday":3, "up":1, "down":2},
+                    {"from":7, "to":12, "weekday":3, "up":1, "down":2},
+                    #{"from":7, "to":11, "weekday":4, "up":11, "down":11},
+                    ],
+                "人工智能":[
+                    #{"from":12, "to":16, "weekday":4, "up":11, "down":11},
+                    {"from":2, "to":5, "weekday":5, "up":3, "down":5},
+                    {"from":6, "to":6, "weekday":7, "up":3, "down":5},
+                    {"from":7, "to":17, "weekday":5, "up":3, "down":5},
+                    ],
+                "区块链技术":[
+                    {"from":2, "to":5, "weekday":3, "up":7, "down":10},
+                    {"from":7, "to":12, "weekday":3, "up":7, "down":10},
+                    ],
+                "C++面向对象技术":[
+                    {"from":2, "to":2, "weekday":1, "up":7, "down":9},
+                    {"from":4, "to":5, "weekday":1, "up":7, "down":9},
+                    {"from":6, "to":6, "weekday":6, "up":7, "down":9},
+                    {"from":7, "to":9, "weekday":1, "up":7, "down":9},
+                    {"from":2, "to":5, "weekday":3, "up":3, "down":5},
+                    {"from":7, "to":8, "weekday":3, "up":3, "down":5},
+                    ],
+                "深度学习实践":[
+                    {"from":11, "to":16, "weekday":1, "up":7, "down":9},
+                    {"from":11, "to":17, "weekday":3, "up":3, "down":5},
+                    ],
+                "工程实验综合":[
+                    ]
+        }
+        stuid = jdata["stuid"]
+        course = jdata["default_course"]
+        reason, status = AffairModel.many_affair(stuid, default_course[course], course)
+        if not status:
+            return HttpResponse(fail(reason))
+        return HttpResponse(success(reason))
+
 class Group(View):
     def create_group(request):
         data = request.body

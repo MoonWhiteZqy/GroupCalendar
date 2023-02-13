@@ -5,6 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <!-- Optional JavaScript -->
+    <script src="/static/md5.min.js"></script> 
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
     <script src="/static/jquery-3.5.1.js"></script>
     <script src="/static/popper.min.js"></script>
@@ -12,7 +13,7 @@
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="/static/bootstrap.min.css">
     <link rel="stylesheet" href="/static/signin.css">
-    <title>Hello, world!</title>
+    <title>欢迎使用课程表</title>
   </head>
   <body class="text-center">
     <div class="form-signin">
@@ -24,13 +25,15 @@
         <div class="checkbox mb-3">
             <label>
                 <input type="checkbox" value="remember-me" id="chebox">
-                Remember me
+                记住密码
             </label>
             <br>
-            <a type="button" data-toggle="modal" data-target="#regModal" href="#">没有帐号？点这里</a>
+            <a type="button" data-toggle="modal" data-target="#regModal" href="#">没有帐号？点这里注册</a>
+	    <br>
+	    <span>注:密码发往服务器前经过加密，不用担心安全问题</span>
         </div>
         <button class="btn btn-lg btn-primary btn-block" onclick="signin()">登录</button>
-        <p class="mt-5 mb-3 text-muted">Powered by Zqy</p>
+        <p class="mt-5 mb-3 text-muted">Powered by Zheng Qinyuan</p>
     </div>
 
     <!-- Modal -->
@@ -76,10 +79,11 @@
     }
 
     register = function(){
+      orig_secret = document.getElementById("regPassword").value;
       data = {
         "stuid":document.getElementById("regStuid").value,
         "name":document.getElementById("regName").value,
-        "secret":document.getElementById("regPassword").value
+        "secret":hex_md5(orig_secret)
       }
       if(data.name.length == 0){
         $("#regLabel").text("用户名不能为空");
@@ -94,7 +98,7 @@
         success:function(result){
           if(result["status"] == "success"){
             localStorage["stuid"] = result["stuid"];
-            localStorage["secret"] = result["secret"];
+            localStorage["secret"] = orig_secret;
             $("#inputStuid").val(localStorage["stuid"]);
             $("#inputPassword").val(localStorage["secret"]);
             signin();
@@ -111,10 +115,10 @@
       var secret = document.getElementById("inputPassword").value;
       var data = {
         "stuid":stuid,
-        "secret":secret
+        "secret":hex_md5(secret)
       }
+      localStorage["stuid"] = stuid;
       if(document.getElementById("chebox").checked){
-        localStorage["stuid"] = stuid;
         localStorage["secret"] = secret;
       }
       postthing = function(){

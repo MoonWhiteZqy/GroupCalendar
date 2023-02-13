@@ -3,6 +3,9 @@ from django.db import models
 # Create your models here.
 import mongoengine
 import json
+import re
+
+ustc_pattern = r'S[AB][0-9]{2}225[0-9]{3}'
 
 class CourseModel(mongoengine.Document):
     stuid = mongoengine.StringField(max_length=12, required=True) #学生学号
@@ -17,7 +20,6 @@ class CourseModel(mongoengine.Document):
         把post的json数据转化，创建新的Course
         """
         stuid2add = jdata['stuid']
-        name2add = jdata['name']
         course2add = jdata['course']
         week2add = jdata['weekday']
         day2add = jdata['daytime']
@@ -49,19 +51,22 @@ class CourseModel(mongoengine.Document):
 class StudentModel(mongoengine.Document):
     stuid = mongoengine.StringField(max_length=12, required=True, unique=True) #学生学号
     name = mongoengine.StringField(max_length=5) #学生姓名
-    secret = mongoengine.StringField(max_length=16, min_length=6) #密码
+    secret = mongoengine.StringField(max_length=32, min_length=32) #密码
 
     def add_student(jdata):
-        stuid2add = jdata['stuid']
+        stuid2add = jdata['stuid'][:10]
+
+        ustcid = re.match(ustc_pattern, stuid2add)
+        if ustcid is None:
+            return {"reason":"学号不符合目标用户规范"}, False
+
         name2add = jdata['name']
         secret2add = jdata['secret']
 
         data = StudentModel.objects(stuid = stuid2add)
         if len(data) > 0:
             return {"reason":"该学号已存在"}, False
-        if len(stuid2add) != 11:
-            return {"reason":"学号长度不正确"}, False
-        if len(secret2add) < 6 or len(secret2add) > 16:
+        if len(secret2add) != 32:
             return {"reason":"密码长度不合适"}, False
         
         student = StudentModel(stuid=stuid2add, name=name2add, secret=secret2add)
@@ -85,15 +90,13 @@ class StudentModel(mongoengine.Document):
 
 class AffairModel(mongoengine.Document):
     stuid = mongoengine.StringField(max_length=12, required=True) #学生学号
-    name = mongoengine.StringField(max_length=5) #学生姓名
     affairname = mongoengine.StringField(max_length=20) #事务名称
-    weeknum = mongoengine.IntField(min_value=0, max_value=18) #描述事务位于第几周
+    weeknum = mongoengine.IntField(min_value=0, max_value=20) #描述事务位于第几周
     weekday = mongoengine.IntField(min_value=0, max_value=7) #描述事务是一周中的那一天
     daytime = mongoengine.IntField(min_value=0, max_value=14) #描述事务在一天中的第几节
 
     def add_by_json(jdata):
         stuid2add = jdata['stuid']
-        name2add = jdata['name']
         affair2add = jdata['affair']
         week2add = jdata['weekday']
         day2add = jdata['daytime']
@@ -103,20 +106,20 @@ class AffairModel(mongoengine.Document):
         # 检验数据是否合理
         if not student:
             return {"reason":"找不到当前学生"}, False
-        if student.name != name2add:
-            return {"reason":"学生名字错误"}, False
         if week2add > 7:
             return {"reason":"日期错误"}, False
         if day2add > 14:
             return {"reason":"时间错误"}, False
-        if weekcount > 18:
+        if weekcount > 20:
             return {"reason":"星期错误"}, False
         
-        find_obj = AffairModel.objects(stuid = stuid2add, name = name2add, weekday = week2add, daytime = day2add, weeknum = weekcount).first() #看原本是否存在事务
+        find_obj = AffairModel.objects(stuid = stuid2add, weekday = week2add, daytime = day2add, weeknum = weekcount).first() #看原本是否存在事务
         if not find_obj: #原本不存在事务，则创建
-            affair = AffairModel(stuid = stuid2add, name = name2add, affairname = affair2add, weekday = week2add, daytime = day2add, weeknum = weekcount)
+            if len(affair2add) == 0: # 原来不存在事务，且新事务为空，不进行改动
+                return {"reason":"没有进行任何修改"}, False 
+            affair = AffairModel(stuid = stuid2add, affairname = affair2add, weekday = week2add, daytime = day2add, weeknum = weekcount)
             affair.save()
-        else: #存在事务，则覆盖或删除
+        else: #存在事务，则删除,不允许覆盖
             find_obj.affairname = affair2add
             if len(affair2add) == 0:
                 find_obj.delete()
@@ -129,10 +132,43 @@ class AffairModel(mongoengine.Document):
         stuid2del = jdata['stuid']
         week2del = jdata['weekday']
         day2del = jdata['daytime']
-        find_obj = AffairModel.objects(stuid = stuid2del, weekday = week2del, daytime = day2del)
-        for obj in find_obj:
+        curweek = jdata['weeknum']
+        find_obj = AffairModel.objects(stuid = stuid2del, weekday = week2del, daytime = day2del, weeknum = curweek).first()
+        if not find_obj:
+            return {"reason":"没有可删除的课程"}, False
+        else:
+            affairname = find_obj.affairname
+            all_obj = AffairModel.objects(stuid = stuid2del, weekday = week2del, affairname = affairname, daytime = day2del)
+        for obj in all_obj:
             obj.delete()
         return {"reason":"success"}, True
+
+    def many_affair(stuid, course, course_name):
+        res = True
+        reasons = []
+        for single in course:
+            from_week = single["from"]
+            to_week = single["to"]
+            up_day = single["up"]
+            down_day = single["down"]
+            for weeknum in range(from_week, to_week + 1):
+                for daytime in range(up_day, down_day + 1):
+                    jdata = {
+                            "stuid":stuid,
+                            "affair":course_name,
+                            "weekday":single["weekday"],
+                            "daytime":daytime,
+                            "weeknum":weeknum
+                    }
+                    curreason, status = AffairModel.add_by_json(jdata)
+                    if status == False:
+                        res = False
+                        reasons.append(curreason["reason"])
+        if res == True:
+            return {"reason":"success"}, True
+        else:
+            reasons = " ".join(reasons)
+            return {"reason":reasons}, False
 
 class GroupModel(mongoengine.Document):
     groupid = mongoengine.StringField(required=True) # 小组编号
@@ -235,7 +271,7 @@ class GroupModel(mongoengine.Document):
 class GroupAffairModel(mongoengine.Document):
     groupid = mongoengine.StringField() # 小组编号
     affairname = mongoengine.StringField(max_length=20) # 事务名称
-    weeknum = mongoengine.IntField(min_value=0, max_value=18) # 事务位于第几周
+    weeknum = mongoengine.IntField(min_value=0, max_value=20) # 事务位于第几周
     weekday = mongoengine.IntField(min_value=0, max_value=7) # 周几
     daytime = mongoengine.IntField(min_value=0, max_value=14) # 第几节课
 
